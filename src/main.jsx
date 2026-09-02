@@ -51,7 +51,7 @@ function Home() {
   return <main>
     <section className="hero" id="home"><div className="hero-art" aria-hidden="true" /><div className="hero-copy wrap">
       <p className="eyebrow"><span>Kasterlee · BE</span> Tattoo &amp; visual artist</p>
-      <h1>Ink on skin.<br /><em>Noise</em> on canvas.</h1>
+      <h1><em>Visual</em><br />Artist</h1>
       <p className="hero-intro">Original tattoos and raw visual work, built from instinct, contrast and a healthy disrespect for clean edges.</p>
       <div className="actions"><Link className="button button-primary" to="/contact">Book a session <span>↗</span></Link><Link className="button button-ghost" to="/tattoo">View tattoo work</Link></div>
     </div><p className="vertical-note">Independent artist / since 2014</p><a className="scroll-note" href="#work">Scroll to explore ↓</a></section>
