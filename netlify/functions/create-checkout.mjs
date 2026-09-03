@@ -1,10 +1,3 @@
-const catalog = {
-  "static-bloom": { name: "Static Bloom", description: "Original on paper", unitAmount: 38000, max: 1 },
-  "faultline-no-2": { name: "Faultline No. 2", description: "Signed print · edition of 25", unitAmount: 8500, max: 5 },
-  "red-room": { name: "Red Room", description: "Original canvas", unitAmount: 74000, max: 1 },
-  "residual-tee": { name: "Residual Tee", description: "Screen print · organic cotton", unitAmount: 4200, max: 5 }
-};
-
 export default async function handler(request) {
   if (request.method !== "POST") return Response.json({ error: "Method not allowed" }, { status: 405 });
   if (!process.env.STRIPE_SECRET_KEY) return Response.json({ error: "Stripe is nog niet gekoppeld. Voeg STRIPE_SECRET_KEY toe in Netlify." }, { status: 503 });
@@ -12,10 +5,19 @@ export default async function handler(request) {
   try {
     const payload = await request.json();
     if (!Array.isArray(payload.items) || payload.items.length === 0 || payload.items.length > 20) throw new Error("Invalid cart");
+    const supabaseUrl = process.env.VITE_SUPABASE_URL?.replace(/\/$/, "");
+    const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    if (!supabaseUrl || !supabaseKey) throw new Error("Shop database is not configured");
+    const ids = payload.items.map(item => item.id);
+    const productResponse = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?select=id,title,description,price_cents,category&id=in.(${ids.map(encodeURIComponent).join(",")})`, {
+      headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }
+    });
+    if (!productResponse.ok) throw new Error("Could not validate shop products");
+    const catalog = Object.fromEntries((await productResponse.json()).filter(product => product.category === "shop" && product.price_cents).map(product => [product.id, product]));
     const items = payload.items.map(item => {
       const product = catalog[item.id];
       const quantity = Number(item.quantity);
-      if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > product.max) throw new Error("Invalid product or quantity");
+      if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > 5) throw new Error("Invalid product or quantity");
       return { product, quantity };
     });
 
@@ -36,8 +38,8 @@ export default async function handler(request) {
     items.forEach(({ product, quantity }, index) => {
       params.set(`line_items[${index}][quantity]`, String(quantity));
       params.set(`line_items[${index}][price_data][currency]`, "eur");
-      params.set(`line_items[${index}][price_data][unit_amount]`, String(product.unitAmount));
-      params.set(`line_items[${index}][price_data][product_data][name]`, product.name);
+      params.set(`line_items[${index}][price_data][unit_amount]`, String(product.price_cents));
+      params.set(`line_items[${index}][price_data][product_data][name]`, product.title);
       params.set(`line_items[${index}][price_data][product_data][description]`, product.description);
     });
 

@@ -6,7 +6,7 @@ Exportable React/Vite version of the HERBZ108 tattoo and visual-art website. It 
 
 - Home, Tattoo, Art, Shop, About and Contact routes.
 - Responsive navigation and the custom HERBZ108 grunge hero image.
-- Placeholder portfolio and product images, ready to replace with real work.
+- Empty Tattoo, Art and Shop archives that are filled through a secure admin page.
 - Netlify and Vercel configuration for single-page routing.
 - A persistent shopping cart with quantities, removal and order totals.
 - Secure Stripe Checkout through a Netlify server function.
@@ -30,9 +30,22 @@ npm run build
 
 For Netlify or Vercel, upload this folder to GitHub and import the repository. Both platforms detect the included settings. The production output folder is `dist`.
 
+## Secure portfolio admin with Supabase
+
+The `/admin` page has email/password login and lets the allowlisted administrator upload or delete Tattoo, Art and Shop work. Uploaded files live in Supabase Storage and their details in the database.
+
+1. Create a Supabase project.
+2. Open **SQL Editor** and run `supabase/setup.sql` once.
+3. In **Authentication → Users**, create the administrator account.
+4. Copy that user's UUID and run the final commented `insert into public.admin_users...` statement separately.
+5. In Netlify add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` for all deploy contexts. These two browser values are not secret; never use the service-role key.
+6. Redeploy and open `/admin`.
+
+The public galleries show a clean empty state until work is uploaded. Shop prices are stored in cents and validated from Supabase by the Stripe server function.
+
 ## Before launch
 
-Replace the placeholder photography, `studio@example.com`, sample prices and demo contact form.
+Replace `studio@example.com` and connect the demo contact form.
 
 ## Activate Stripe payments
 
