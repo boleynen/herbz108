@@ -45,7 +45,7 @@ The public galleries show a clean empty state until work is uploaded. Shop price
 
 ## Before launch
 
-Replace `studio@example.com` and connect the demo contact form.
+Connect the demo contact form before launch. Direct enquiries use `herbzbooking@protonmail.com`.
 
 ## Activate Stripe payments
 
