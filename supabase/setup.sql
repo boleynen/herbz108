@@ -8,6 +8,7 @@ create table if not exists public.portfolio_items (
   category text not null check (category in ('tattoo', 'art', 'shop')),
   product_type text check (product_type is null or product_type in ('paintings', 'prints', 'apparel', 'sculptures', 'other')),
   canvas_type text,
+  stock_quantity integer check (stock_quantity is null or stock_quantity >= 0),
   title text not null,
   description text not null default '',
   price_cents integer check (price_cents is null or price_cents >= 50),

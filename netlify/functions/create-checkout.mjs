@@ -9,7 +9,7 @@ export default async function handler(request) {
     const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
     if (!supabaseUrl || !supabaseKey) throw new Error("Shop database is not configured");
     const ids = payload.items.map(item => item.id);
-    const productResponse = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?select=id,title,description,price_cents,category&id=in.(${ids.map(encodeURIComponent).join(",")})`, {
+    const productResponse = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?select=id,title,description,price_cents,category,stock_quantity&id=in.(${ids.map(encodeURIComponent).join(",")})`, {
       headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }
     });
     if (!productResponse.ok) throw new Error("Could not validate shop products");
@@ -17,7 +17,7 @@ export default async function handler(request) {
     const items = payload.items.map(item => {
       const product = catalog[item.id];
       const quantity = Number(item.quantity);
-      if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > 5) throw new Error("Invalid product or quantity");
+      if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > Number(product.stock_quantity ?? 1)) throw new Error("The requested quantity is no longer available");
       return { product, quantity };
     });
 
