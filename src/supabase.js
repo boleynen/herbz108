@@ -102,6 +102,15 @@ export async function insertPortfolioItem(record) {
   return (await parse(response))[0];
 }
 
+export async function updatePortfolioItem(id, record) {
+  const response = await fetch(`${url}/rest/v1/portfolio_items?id=eq.${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: headers(await authenticatedToken(), { "Content-Type": "application/json", Prefer: "return=representation" }),
+    body: JSON.stringify(record)
+  });
+  return (await parse(response))[0];
+}
+
 export async function insertPortfolioImages(records) {
   const response = await fetch(`${url}/rest/v1/portfolio_images`, {
     method: "POST",
