@@ -70,6 +70,12 @@ To show paid orders in the separate **Orders** section of `/admin`, run `supabas
 
 To store the buyer name, shipping address and exact purchased product details, run `supabase/add-order-details.sql` once and redeploy. New orders include these details automatically. Older Stripe events can be retried once from the Stripe webhook delivery screen to enrich existing order records without reducing stock twice.
 
+## Shipping setup
+
+Run `supabase/add-product-shipping.sql` once in the Supabase SQL Editor before deploying this version. New shop products require their unpacked weight; paintings, prints and sculptures also require dimensions. Checkout adds an estimated packaging allowance and selects the configured weight tier for Belgium, the Netherlands, Luxembourg, Germany or France. For oversized or exceptional products, choose custom shipping in `/admin` and enter a price for every country.
+
+Existing products need shipping data before checkout. Add their weight (and dimensions where relevant) in Supabase's `portfolio_items` table, or recreate them through `/admin`.
+
 If deleting a product from `/admin` shows **Access denied**, run `supabase/fix-admin-delete-policies.sql` once in the Supabase SQL Editor.
 
 ## Order confirmation emails

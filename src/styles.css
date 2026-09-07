@@ -53,3 +53,11 @@
 /* Product dimensions and apparel stock by size */
 .size-picker{margin:0 0 24px;padding:0;border:0}.size-picker legend,.admin-size-picker legend{margin-bottom:12px;color:var(--cyan);font:10px monospace;text-transform:uppercase;letter-spacing:.12em}.size-picker>div{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.size-picker button{min-height:52px;padding:9px;border:1px solid var(--line);background:transparent;color:var(--paper);font:700 12px monospace;cursor:pointer}.size-picker button small{display:block;margin-top:4px;color:var(--cyan);font:8px monospace;text-transform:uppercase}.size-picker button.active{border-color:var(--cyan);background:var(--cyan);color:var(--ink)}.size-picker button.active small{color:var(--ink)}.size-picker button:disabled{opacity:.3;text-decoration:line-through;cursor:not-allowed}.admin-size-picker{grid-column:1/-1;display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:0;padding:18px;border:1px solid var(--line)}.admin-size-picker legend{padding:0 7px}.admin-size-picker label{gap:6px}.admin-size-picker input{padding:12px 8px;text-align:center}
 @media(max-width:700px){.admin-size-picker{grid-template-columns:repeat(3,1fr)}}
+.shipping-dimensions,.custom-shipping{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:0;padding:20px;border:1px solid var(--line)}
+.shipping-dimensions legend,.custom-shipping legend{padding:0 8px;color:var(--cyan);font:10px monospace;text-transform:uppercase;letter-spacing:.14em}
+.custom-shipping{grid-template-columns:repeat(5,1fr)}
+.delivery-country{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;color:var(--cyan);font:10px monospace;text-transform:uppercase;letter-spacing:.14em}
+.delivery-country select{width:100%;padding:12px;border:1px solid var(--line);background:#101111;color:var(--paper);font:13px monospace}
+.cart-summary>div{padding:5px 0}
+.cart-summary .cart-grand-total{margin-top:8px;padding-top:14px;border-top:1px solid var(--line)}
+@media(max-width:700px){.shipping-dimensions,.custom-shipping{grid-column:auto;grid-template-columns:1fr}}
