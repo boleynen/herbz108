@@ -42,7 +42,7 @@ export default async function handler(request) {
       params.set(`line_items[${index}][price_data][currency]`, "eur");
       params.set(`line_items[${index}][price_data][unit_amount]`, String(product.price_cents));
       params.set(`line_items[${index}][price_data][product_data][name]`, product.title);
-      params.set(`line_items[${index}][price_data][product_data][description]`, product.description);
+      if (product.description?.trim()) params.set(`line_items[${index}][price_data][product_data][description]`, product.description.trim());
     });
 
     const stripeResponse = await fetch("https://api.stripe.com/v1/checkout/sessions", {
