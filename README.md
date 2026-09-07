@@ -68,4 +68,6 @@ To show paid orders in the separate **Orders** section of `/admin`, run `supabas
 
 To store the buyer name, shipping address and exact purchased product details, run `supabase/add-order-details.sql` once and redeploy. New orders include these details automatically. Older Stripe events can be retried once from the Stripe webhook delivery screen to enrich existing order records without reducing stock twice.
 
+If deleting a product from `/admin` shows **Access denied**, run `supabase/fix-admin-delete-policies.sql` once in the Supabase SQL Editor.
+
 The cart itself works locally. The final payment redirect and webhook work after deployment on Netlify because they require protected server functions. Test the complete flow before replacing test keys with live keys.
