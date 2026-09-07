@@ -1,30 +1,7 @@
--- Run once in Supabase -> SQL Editor before enabling Stripe payments.
-create table if not exists public.orders (
-  id uuid primary key default gen_random_uuid(),
-  stripe_event_id text not null unique,
-  stripe_session_id text not null unique,
-  customer_email text,
-  customer_name text,
-  shipping_address jsonb,
-  status text not null default 'new' check (status in ('new', 'shipped', 'completed')),
-  amount_total integer not null,
-  currency text not null,
-  items jsonb not null,
-  created_at timestamptz not null default now()
-);
-
-alter table public.orders enable row level security;
-
-drop policy if exists "admins can view orders" on public.orders;
-create policy "admins can view orders"
-on public.orders for select
-to authenticated
-using (
-  exists (
-    select 1 from public.admin_users
-    where admin_users.user_id = (select auth.uid())
-  )
-);
+-- Run once in Supabase -> SQL Editor to store customer, address and product snapshots.
+alter table public.orders add column if not exists customer_name text;
+alter table public.orders add column if not exists shipping_address jsonb;
+alter table public.orders add column if not exists status text not null default 'new';
 
 create or replace function public.process_paid_order(
   p_event_id text,
