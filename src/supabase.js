@@ -16,15 +16,43 @@ export const getSession = () => {
   try { return JSON.parse(localStorage.getItem(sessionKey)); } catch { return null; }
 };
 
+const saveSession = data => {
+  const session = { access_token: data.access_token, refresh_token: data.refresh_token, user: data.user };
+  localStorage.setItem(sessionKey, JSON.stringify(session));
+  return session;
+};
+
+const tokenExpiresSoon = token => {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return !payload.exp || payload.exp * 1000 < Date.now() + 60000;
+  } catch { return true; }
+};
+
+async function authenticatedToken() {
+  const session = getSession();
+  if (!session?.access_token || !session?.refresh_token) throw new Error("Your login expired. Please sign in again.");
+  if (!tokenExpiresSoon(session.access_token)) return session.access_token;
+  try {
+    const refreshed = await fetch(`${url}/auth/v1/token?grant_type=refresh_token`, {
+      method: "POST",
+      headers: headers(null, { "Content-Type": "application/json" }),
+      body: JSON.stringify({ refresh_token: session.refresh_token })
+    }).then(parse);
+    return saveSession(refreshed).access_token;
+  } catch {
+    signOut();
+    throw new Error("Your login expired. Please sign in again.");
+  }
+}
+
 export async function signIn(email, password) {
   const data = await fetch(`${url}/auth/v1/token?grant_type=password`, {
     method: "POST",
     headers: headers(null, { "Content-Type": "application/json" }),
     body: JSON.stringify({ email, password })
   }).then(parse);
-  const session = { access_token: data.access_token, refresh_token: data.refresh_token, user: data.user };
-  localStorage.setItem(sessionKey, JSON.stringify(session));
-  return session;
+  return saveSession(data);
 }
 
 export function signOut() { localStorage.removeItem(sessionKey); }
@@ -42,17 +70,16 @@ export async function fetchPortfolio() {
 }
 
 export async function fetchOrders() {
-  const session = getSession();
-  if (!databaseConfigured || !session?.access_token) return [];
+  if (!databaseConfigured) return [];
   return fetch(`${url}/rest/v1/orders?select=*&order=created_at.desc`, {
-    headers: headers(session.access_token)
+    headers: headers(await authenticatedToken())
   }).then(parse);
 }
 
 export async function uploadPortfolioImage(file, path) {
   await fetch(`${url}/storage/v1/object/herbz-images/${path}`, {
     method: "POST",
-    headers: headers(getSession()?.access_token, { "Content-Type": file.type, "x-upsert": "false" }),
+    headers: headers(await authenticatedToken(), { "Content-Type": file.type, "x-upsert": "false" }),
     body: file
   }).then(parse);
   return `${url}/storage/v1/object/public/herbz-images/${path}`;
@@ -61,7 +88,7 @@ export async function uploadPortfolioImage(file, path) {
 export async function removePortfolioImage(path) {
   const response = await fetch(`${url}/storage/v1/object/herbz-images/${path}`, {
     method: "DELETE",
-    headers: headers(getSession()?.access_token)
+    headers: headers(await authenticatedToken())
   });
   if (!response.ok) await parse(response);
 }
@@ -69,7 +96,7 @@ export async function removePortfolioImage(path) {
 export async function insertPortfolioItem(record) {
   const response = await fetch(`${url}/rest/v1/portfolio_items`, {
     method: "POST",
-    headers: headers(getSession()?.access_token, { "Content-Type": "application/json", Prefer: "return=representation" }),
+    headers: headers(await authenticatedToken(), { "Content-Type": "application/json", Prefer: "return=representation" }),
     body: JSON.stringify(record)
   });
   return (await parse(response))[0];
@@ -78,7 +105,7 @@ export async function insertPortfolioItem(record) {
 export async function insertPortfolioImages(records) {
   const response = await fetch(`${url}/rest/v1/portfolio_images`, {
     method: "POST",
-    headers: headers(getSession()?.access_token, { "Content-Type": "application/json", Prefer: "return=minimal" }),
+    headers: headers(await authenticatedToken(), { "Content-Type": "application/json", Prefer: "return=minimal" }),
     body: JSON.stringify(records)
   });
   if (!response.ok) await parse(response);
@@ -87,7 +114,7 @@ export async function insertPortfolioImages(records) {
 export async function deletePortfolioItem(id) {
   const response = await fetch(`${url}/rest/v1/portfolio_items?id=eq.${encodeURIComponent(id)}`, {
     method: "DELETE",
-    headers: headers(getSession()?.access_token, { Prefer: "return=minimal" })
+    headers: headers(await authenticatedToken(), { Prefer: "return=minimal" })
   });
   if (!response.ok) await parse(response);
 }

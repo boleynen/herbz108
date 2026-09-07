@@ -66,7 +66,7 @@ function Admin({ items, onChanged }) {
   const initialForm = { category: "shop", productType: "paintings", canvasType: "", title: "", description: "", price: "", stock: "1" };
   const [session, setSession] = useState(getSession()), [form, setForm] = useState(initialForm), [files, setFiles] = useState([]), [coverIndex, setCoverIndex] = useState(0), [message, setMessage] = useState("");
   const [adminView, setAdminView] = useState("work"), [orders, setOrders] = useState([]), [ordersMessage, setOrdersMessage] = useState("");
-  useEffect(() => { if (session && adminView === "orders") { setOrdersMessage("Loading orders…"); fetchOrders().then(data => { setOrders(data); setOrdersMessage(""); }).catch(error => setOrdersMessage(error.message)); } }, [adminView, session]);
+  useEffect(() => { if (session && adminView === "orders") { setOrdersMessage("Loading orders…"); fetchOrders().then(data => { setOrders(data); setOrdersMessage(""); }).catch(error => { if (error.message.includes("login expired")) setSession(null); else setOrdersMessage(error.message); }); } }, [adminView, session]);
   if (!databaseConfigured) return <main className="admin"><section><p className="kicker">Setup required</p><h1>Connect database.</h1><p className="notice">Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in Netlify to activate secure login and uploads.</p></section></main>;
   if (!session) return <Login onLogin={setSession} />;
   const change = e => setForm({ ...form, [e.target.name]: e.target.value });
