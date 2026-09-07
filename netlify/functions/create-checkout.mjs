@@ -4,7 +4,7 @@ export default async function handler(request) {
 
   try {
     const payload = await request.json();
-    if (!Array.isArray(payload.items) || payload.items.length === 0 || payload.items.length > 20) throw new Error("Invalid cart");
+    if (!Array.isArray(payload.items) || payload.items.length === 0 || payload.items.length > 10) throw new Error("Invalid cart");
     const supabaseUrl = process.env.VITE_SUPABASE_URL?.replace(/\/$/, "");
     const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
     if (!supabaseUrl || !supabaseKey) throw new Error("Shop database is not configured");
@@ -34,6 +34,8 @@ export default async function handler(request) {
       "shipping_address_collection[allowed_countries][3]": "FR",
       "shipping_address_collection[allowed_countries][4]": "LU"
     });
+
+    params.set("metadata[inventory]", JSON.stringify(items.map(({ product, quantity }) => [product.id, quantity])));
 
     items.forEach(({ product, quantity }, index) => {
       params.set(`line_items[${index}][quantity]`, String(quantity));

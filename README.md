@@ -49,12 +49,17 @@ Connect the demo contact form before launch. Direct enquiries use `herbzbooking@
 
 ## Activate Stripe payments
 
-1. Create or open your Stripe account.
-2. In Stripe, open **Developers → API keys** and copy the secret key. Use the test key (`sk_test_...`) while testing.
-3. In Netlify, open **Project configuration → Environment variables**.
-4. Add `STRIPE_SECRET_KEY` and paste the secret key as its value.
-5. Deploy the site again.
+1. Run `supabase/add-shop-filters.sql`, followed by `supabase/add-orders-and-payment-stock.sql`, in the Supabase SQL Editor.
+2. In Supabase, open **Project Settings → API keys** and copy the `service_role` secret key.
+3. In Netlify, add `SUPABASE_SERVICE_ROLE_KEY` as a secret environment variable for Functions and Runtime. Never prefix this key with `VITE_`.
+4. In Stripe, open **Developers → API keys** and copy the secret key. Use `sk_test_...` while testing.
+5. In Netlify, add the Stripe key as the secret environment variable `STRIPE_SECRET_KEY` for Functions and Runtime.
+6. Deploy the site so the two Netlify functions are available.
+7. In Stripe Workbench, create a webhook/event destination for `https://YOUR-NETLIFY-DOMAIN/.netlify/functions/stripe-webhook`.
+8. Subscribe it to `checkout.session.completed` and `checkout.session.async_payment_succeeded`.
+9. Copy the webhook signing secret (`whsec_...`) into Netlify as the secret environment variable `STRIPE_WEBHOOK_SECRET` for Functions and Runtime, then deploy again.
+10. In **Stripe → Settings → Payment methods**, enable Cards and Bancontact, plus iDEAL if Dutch customers are expected.
 
-Prices and allowed quantities are validated securely in `netlify/functions/create-checkout.mjs`; the browser cannot change them. Never put the secret Stripe key in `src`, GitHub or a variable beginning with `VITE_`.
+Prices and allowed quantities are validated securely in `netlify/functions/create-checkout.mjs`; the browser cannot change them. The signed webhook stores a paid order and reduces stock exactly once. Never put Stripe or Supabase secret keys in `src`, GitHub or a variable beginning with `VITE_`.
 
-The cart itself works locally. The final payment redirect works after deployment on Netlify because it requires the protected server function.
+The cart itself works locally. The final payment redirect and webhook work after deployment on Netlify because they require protected server functions. Test the complete flow before replacing test keys with live keys.
