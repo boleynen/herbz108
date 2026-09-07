@@ -41,6 +41,14 @@ export async function fetchPortfolio() {
   });
 }
 
+export async function fetchOrders() {
+  const session = getSession();
+  if (!databaseConfigured || !session?.access_token) return [];
+  return fetch(`${url}/rest/v1/orders?select=*&order=created_at.desc`, {
+    headers: headers(session.access_token)
+  }).then(parse);
+}
+
 export async function uploadPortfolioImage(file, path) {
   await fetch(`${url}/storage/v1/object/herbz-images/${path}`, {
     method: "POST",

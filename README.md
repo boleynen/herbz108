@@ -64,4 +64,6 @@ Connect the demo contact form before launch. Direct enquiries use `herbzbooking@
 
 Prices and allowed quantities are validated securely in `netlify/functions/create-checkout.mjs`; the browser cannot change them. The signed webhook stores a paid order and reduces stock exactly once. Never put Stripe or Supabase secret keys in `src`, GitHub or a variable beginning with `VITE_`.
 
+To show paid orders in the separate **Orders** section of `/admin`, run `supabase/add-admin-orders-view.sql` once in the Supabase SQL Editor.
+
 The cart itself works locally. The final payment redirect and webhook work after deployment on Netlify because they require protected server functions. Test the complete flow before replacing test keys with live keys.
