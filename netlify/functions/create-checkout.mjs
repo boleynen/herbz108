@@ -9,7 +9,7 @@ export default async function handler(request) {
     const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
     if (!supabaseUrl || !supabaseKey) throw new Error("Shop database is not configured");
     const ids = payload.items.map(item => item.id);
-    const productResponse = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?select=id,title,description,price_cents,category,stock_quantity&id=in.(${ids.map(encodeURIComponent).join(",")})`, {
+    const productResponse = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?select=id,title,description,price_cents,category,product_type,stock_quantity,size_stock&id=in.(${ids.map(encodeURIComponent).join(",")})`, {
       headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }
     });
     if (!productResponse.ok) throw new Error("Could not validate shop products");
@@ -17,8 +17,11 @@ export default async function handler(request) {
     const items = payload.items.map(item => {
       const product = catalog[item.id];
       const quantity = Number(item.quantity);
-      if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > Number(product.stock_quantity ?? 1)) throw new Error("The requested quantity is no longer available");
-      return { product, quantity };
+      const size = typeof item.size === "string" ? item.size.toUpperCase() : null;
+      const available = product?.product_type === "apparel" ? Number(product.size_stock?.[size] || 0) : Number(product?.stock_quantity ?? 1);
+      if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > available) throw new Error("The requested size or quantity is no longer available");
+      if (product.product_type === "apparel" && !["XS", "S", "M", "L", "XL", "XXL"].includes(size)) throw new Error("Choose a valid apparel size");
+      return { product, quantity, size };
     });
 
     const origin = new URL(request.url).origin;
@@ -35,13 +38,13 @@ export default async function handler(request) {
       "shipping_address_collection[allowed_countries][4]": "LU"
     });
 
-    params.set("metadata[inventory]", JSON.stringify(items.map(({ product, quantity }) => [product.id, quantity])));
+    params.set("metadata[inventory]", JSON.stringify(items.map(({ product, quantity, size }) => [product.id, quantity, size])));
 
-    items.forEach(({ product, quantity }, index) => {
+    items.forEach(({ product, quantity, size }, index) => {
       params.set(`line_items[${index}][quantity]`, String(quantity));
       params.set(`line_items[${index}][price_data][currency]`, "eur");
       params.set(`line_items[${index}][price_data][unit_amount]`, String(product.price_cents));
-      params.set(`line_items[${index}][price_data][product_data][name]`, product.title);
+      params.set(`line_items[${index}][price_data][product_data][name]`, size ? `${product.title} — Size ${size}` : product.title);
       if (product.description?.trim()) params.set(`line_items[${index}][price_data][product_data][description]`, product.description.trim());
     });
 

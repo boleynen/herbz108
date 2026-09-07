@@ -45,6 +45,8 @@ The public galleries show a clean empty state until work is uploaded. Shop price
 
 For multiple product photos, run `supabase/add-product-images.sql` once. The admin can then upload several images per product and select the cover image. Existing products are migrated automatically and the shop is ordered newest first.
 
+For product dimensions and apparel inventory per size, run `supabase/add-product-sizes.sql` once in the Supabase SQL Editor before deploying the matching code.
+
 ## Before launch
 
 Connect the demo contact form before launch. Direct enquiries use `herbzbooking@protonmail.com`.
@@ -69,5 +71,13 @@ To show paid orders in the separate **Orders** section of `/admin`, run `supabas
 To store the buyer name, shipping address and exact purchased product details, run `supabase/add-order-details.sql` once and redeploy. New orders include these details automatically. Older Stripe events can be retried once from the Stripe webhook delivery screen to enrich existing order records without reducing stock twice.
 
 If deleting a product from `/admin` shows **Access denied**, run `supabase/fix-admin-delete-policies.sql` once in the Supabase SQL Editor.
+
+## Order confirmation emails
+
+1. Create a Resend account and verify a domain or sending subdomain.
+2. Run `supabase/add-order-confirmation-email.sql` once in the Supabase SQL Editor.
+3. Add `RESEND_API_KEY` in Netlify as a secret for Functions and Runtime.
+4. Add `RESEND_FROM_EMAIL` in Netlify, for example `HERBZ108 <orders@updates.yourdomain.com>` using the verified Resend domain.
+5. Redeploy the site. The Stripe webhook sends one confirmation email after a successful payment and records the delivery ID on the order.
 
 The cart itself works locally. The final payment redirect and webhook work after deployment on Netlify because they require protected server functions. Test the complete flow before replacing test keys with live keys.

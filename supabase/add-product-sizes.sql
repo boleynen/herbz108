@@ -1,32 +1,6 @@
--- Run once in Supabase -> SQL Editor before enabling Stripe payments.
-create table if not exists public.orders (
-  id uuid primary key default gen_random_uuid(),
-  stripe_event_id text not null unique,
-  stripe_session_id text not null unique,
-  customer_email text,
-  customer_name text,
-  shipping_address jsonb,
-  status text not null default 'new' check (status in ('new', 'shipped', 'completed')),
-  confirmation_email_sent_at timestamptz,
-  confirmation_email_id text,
-  amount_total integer not null,
-  currency text not null,
-  items jsonb not null,
-  created_at timestamptz not null default now()
-);
-
-alter table public.orders enable row level security;
-
-drop policy if exists "admins can view orders" on public.orders;
-create policy "admins can view orders"
-on public.orders for select
-to authenticated
-using (
-  exists (
-    select 1 from public.admin_users
-    where admin_users.user_id = (select auth.uid())
-  )
-);
+-- Run once in Supabase -> SQL Editor to enable dimensions and apparel stock per size.
+alter table public.portfolio_items add column if not exists size text;
+alter table public.portfolio_items add column if not exists size_stock jsonb not null default '{}'::jsonb;
 
 create or replace function public.process_paid_order(
   p_event_id text,
@@ -45,6 +19,8 @@ as $$
 declare
   item jsonb;
   inserted_id uuid;
+  requested_size text;
+  requested_quantity integer;
 begin
   insert into public.orders(stripe_event_id, stripe_session_id, customer_email, customer_name, shipping_address, amount_total, currency, items)
   values(p_event_id, p_session_id, p_customer_email, p_customer_name, p_shipping_address, p_amount_total, p_currency, p_items)
@@ -63,11 +39,27 @@ begin
 
   for item in select * from jsonb_array_elements(p_items)
   loop
-    update public.portfolio_items
-    set stock_quantity = stock_quantity - (item->>'quantity')::integer
-    where id = (item->>'id')::uuid
-      and category = 'shop'
-      and stock_quantity >= (item->>'quantity')::integer;
+    requested_quantity := (item->>'quantity')::integer;
+    requested_size := nullif(item->>'size', '');
+
+    if requested_size is not null then
+      update public.portfolio_items
+      set size_stock = jsonb_set(size_stock, array[requested_size], to_jsonb((size_stock->>requested_size)::integer - requested_quantity)),
+          stock_quantity = stock_quantity - requested_quantity
+      where id = (item->>'id')::uuid
+        and category = 'shop'
+        and product_type = 'apparel'
+        and coalesce((size_stock->>requested_size)::integer, 0) >= requested_quantity
+        and stock_quantity >= requested_quantity;
+    else
+      update public.portfolio_items
+      set stock_quantity = stock_quantity - requested_quantity
+      where id = (item->>'id')::uuid
+        and category = 'shop'
+        and product_type <> 'apparel'
+        and stock_quantity >= requested_quantity;
+    end if;
+
     if not found then raise exception 'Insufficient stock for item %', item->>'id'; end if;
   end loop;
   return true;
