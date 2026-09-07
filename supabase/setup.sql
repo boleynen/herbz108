@@ -6,6 +6,8 @@ create table if not exists public.admin_users (
 create table if not exists public.portfolio_items (
   id uuid primary key default gen_random_uuid(),
   category text not null check (category in ('tattoo', 'art', 'shop')),
+  product_type text check (product_type is null or product_type in ('paintings', 'prints', 'apparel', 'sculptures', 'other')),
+  canvas_type text,
   title text not null,
   description text not null default '',
   price_cents integer check (price_cents is null or price_cents >= 50),
