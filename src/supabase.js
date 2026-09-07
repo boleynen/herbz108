@@ -31,7 +31,14 @@ export function signOut() { localStorage.removeItem(sessionKey); }
 
 export async function fetchPortfolio() {
   if (!databaseConfigured) return [];
-  return fetch(`${url}/rest/v1/portfolio_items?select=*&order=sort_order.desc,created_at.desc`, { headers: headers() }).then(parse);
+  const items = await fetch(`${url}/rest/v1/portfolio_items?select=*&order=created_at.desc`, { headers: headers() }).then(parse);
+  const imageResponse = await fetch(`${url}/rest/v1/portfolio_images?select=*&order=sort_order.asc`, { headers: headers() });
+  if (!imageResponse.ok) return items.map(item => ({ ...item, images: [{ image_url: item.image_url, storage_path: item.storage_path, is_cover: true }] }));
+  const images = await imageResponse.json();
+  return items.map(item => {
+    const productImages = images.filter(image => image.item_id === item.id);
+    return { ...item, images: productImages.length ? productImages : [{ image_url: item.image_url, storage_path: item.storage_path, is_cover: true }] };
+  });
 }
 
 export async function uploadPortfolioImage(file, path) {
@@ -54,8 +61,17 @@ export async function removePortfolioImage(path) {
 export async function insertPortfolioItem(record) {
   const response = await fetch(`${url}/rest/v1/portfolio_items`, {
     method: "POST",
-    headers: headers(getSession()?.access_token, { "Content-Type": "application/json", Prefer: "return=minimal" }),
+    headers: headers(getSession()?.access_token, { "Content-Type": "application/json", Prefer: "return=representation" }),
     body: JSON.stringify(record)
+  });
+  return (await parse(response))[0];
+}
+
+export async function insertPortfolioImages(records) {
+  const response = await fetch(`${url}/rest/v1/portfolio_images`, {
+    method: "POST",
+    headers: headers(getSession()?.access_token, { "Content-Type": "application/json", Prefer: "return=minimal" }),
+    body: JSON.stringify(records)
   });
   if (!response.ok) await parse(response);
 }

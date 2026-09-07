@@ -43,6 +43,8 @@ The `/admin` page has email/password login and lets the allowlisted administrato
 
 The public galleries show a clean empty state until work is uploaded. Shop prices are stored in cents and validated from Supabase by the Stripe server function.
 
+For multiple product photos, run `supabase/add-product-images.sql` once. The admin can then upload several images per product and select the cover image. Existing products are migrated automatically and the shop is ordered newest first.
+
 ## Before launch
 
 Connect the demo contact form before launch. Direct enquiries use `herbzbooking@protonmail.com`.
