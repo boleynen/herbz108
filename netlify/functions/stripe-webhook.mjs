@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { shipmentTracking, submitProdigiOrder } from "./_prodigi.mjs";
 
 const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character]);
 const euro = cents => new Intl.NumberFormat("en-BE", { style: "currency", currency: "EUR" }).format((cents || 0) / 100);
@@ -50,7 +51,7 @@ export default async function handler(request) {
     const event = JSON.parse(payload);
     const session = event.data?.object;
     if (["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type) && session?.payment_status === "paid") {
-      const inventory = JSON.parse(session.metadata?.inventory || "[]").map(([id, quantity, size]) => ({ id, quantity, size: size || null }));
+      const inventory = JSON.parse(session.metadata?.inventory || "[]").map(([id, quantity, size, fulfillmentMode]) => ({ id, quantity, size: size || null, fulfillment_mode: fulfillmentMode || "stock" }));
       if (!inventory.length) throw new Error("Checkout session contains no inventory data");
       const lineItemResponse = await fetch(`https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(session.id)}/line_items?limit=100`, {
         headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` }
@@ -73,11 +74,34 @@ export default async function handler(request) {
         body: JSON.stringify({ p_event_id: event.id, p_session_id: session.id, p_items: items, p_customer_email: session.customer_details?.email || null, p_customer_name: customerName, p_shipping_address: shippingAddress, p_amount_total: session.amount_total, p_currency: session.currency })
       });
       if (!response.ok) throw new Error(await response.text());
-      const orderResponse = await fetch(`${supabaseUrl}/rest/v1/orders?select=confirmation_email_sent_at&stripe_event_id=eq.${encodeURIComponent(event.id)}&limit=1`, {
+      const orderResponse = await fetch(`${supabaseUrl}/rest/v1/orders?select=id,stripe_session_id,customer_email,customer_name,shipping_address,currency,prodigi_order_id,confirmation_email_sent_at&stripe_event_id=eq.${encodeURIComponent(event.id)}&limit=1`, {
         headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` }
       });
       if (!orderResponse.ok) throw new Error(await orderResponse.text());
       const [savedOrder] = await orderResponse.json();
+      const podItems = items.filter(item => item.fulfillment_mode === "prodigi");
+      if (podItems.length && !savedOrder?.prodigi_order_id) {
+        if (!process.env.PRODIGI_WEBHOOK_SECRET) throw new Error("PRODIGI_WEBHOOK_SECRET must be configured before processing POD orders");
+        const productIds = podItems.map(item => item.id).join(",");
+        const productResponse = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?select=id,fulfillment_mode,prodigi_sku,prodigi_asset_url,prodigi_attributes,prodigi_sizing&id=in.(${encodeURIComponent(productIds)})`, {
+          headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` }
+        });
+        if (!productResponse.ok) throw new Error(await productResponse.text());
+        const podCatalog = Object.fromEntries((await productResponse.json()).map(product => [product.id, product]));
+        const origin = new URL(request.url).origin;
+        const prodigiOrder = await submitProdigiOrder({
+          order: savedOrder,
+          items: podItems.map(item => ({ ...item, ...podCatalog[item.id] })),
+          callbackUrl: `${origin}/.netlify/functions/prodigi-webhook?token=${encodeURIComponent(process.env.PRODIGI_WEBHOOK_SECRET)}`
+        });
+        const tracking = shipmentTracking(prodigiOrder);
+        const podUpdate = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${encodeURIComponent(savedOrder.id)}`, {
+          method: "PATCH",
+          headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+          body: JSON.stringify({ prodigi_order_id: prodigiOrder.id, prodigi_status: prodigiOrder.status?.stage || "created", prodigi_tracking_number: tracking.number, prodigi_tracking_url: tracking.url, prodigi_last_error: null, prodigi_updated_at: new Date().toISOString() })
+        });
+        if (!podUpdate.ok) throw new Error(await podUpdate.text());
+      }
       if (!savedOrder?.confirmation_email_sent_at) {
         const emailId = await sendOrderConfirmation({ session, items, customerName, shippingAddress });
         if (emailId) {

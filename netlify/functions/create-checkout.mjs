@@ -13,7 +13,7 @@ export default async function handler(request) {
     const country = typeof payload.country === "string" ? payload.country.toUpperCase() : "";
     if (!SHIPPING_COUNTRIES[country]) throw new Error("Choose a supported delivery country");
     const ids = payload.items.map(item => item.id);
-    const productResponse = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?select=id,title,description,price_cents,category,product_type,stock_quantity,size_stock,shipping_weight_grams,shipping_width_cm,shipping_height_cm,shipping_depth_cm,shipping_mode,custom_shipping_prices&id=in.(${ids.map(encodeURIComponent).join(",")})`, {
+    const productResponse = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?select=id,title,description,price_cents,category,product_type,stock_quantity,size_stock,shipping_weight_grams,shipping_width_cm,shipping_height_cm,shipping_depth_cm,shipping_mode,custom_shipping_prices,fulfillment_mode,fulfillment_provider,prodigi_sku,prodigi_asset_url,prodigi_attributes,prodigi_sizing&id=in.(${ids.map(encodeURIComponent).join(",")})`, {
       headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }
     });
     if (!productResponse.ok) throw new Error("Could not validate shop products");
@@ -22,9 +22,11 @@ export default async function handler(request) {
       const product = catalog[item.id];
       const quantity = Number(item.quantity);
       const size = typeof item.size === "string" ? item.size.toUpperCase() : null;
-      const available = product?.product_type === "apparel" ? Number(product.size_stock?.[size] || 0) : Number(product?.stock_quantity ?? 1);
-      if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > available) throw new Error("The requested size or quantity is no longer available");
-      if (product.product_type === "apparel" && !["XS", "S", "M", "L", "XL", "XXL"].includes(size)) throw new Error("Choose a valid apparel size");
+      const isPod = product?.fulfillment_mode === "prodigi";
+      const available = product?.product_type === "apparel" && !isPod ? Number(product.size_stock?.[size] || 0) : Number(product?.stock_quantity ?? 1);
+      if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > (isPod ? 10 : available)) throw new Error("The requested size or quantity is no longer available");
+      if (product.product_type === "apparel" && !isPod && !["XS", "S", "M", "L", "XL", "XXL"].includes(size)) throw new Error("Choose a valid apparel size");
+      if (isPod && (!product.prodigi_sku || !product.prodigi_asset_url)) throw new Error(`This made-to-order product is not configured yet: ${product.title}`);
       if ((product.shipping_mode || "automatic") === "automatic" && !isStandardParcel(product)) throw new Error(`Custom shipping must be configured for ${product.title}`);
       return { product, quantity, size };
     });
@@ -44,7 +46,7 @@ export default async function handler(request) {
       "shipping_options[0][shipping_rate_data][display_name]": `Tracked shipping to ${SHIPPING_COUNTRIES[country].name}`
     });
 
-    params.set("metadata[inventory]", JSON.stringify(items.map(({ product, quantity, size }) => [product.id, quantity, size])));
+    params.set("metadata[inventory]", JSON.stringify(items.map(({ product, quantity, size }) => [product.id, quantity, size, product.fulfillment_mode || "stock"])));
     params.set("metadata[delivery_country]", country);
     params.set("metadata[shipping_amount]", String(shipping.amount));
 
