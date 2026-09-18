@@ -1,4 +1,5 @@
 import { calculateShipping, isStandardParcel, SHIPPING_COUNTRIES } from "./_shipping.mjs";
+import { quoteProdigiShipping } from "./_prodigi.mjs";
 
 export default async function handler(request) {
   if (request.method !== "POST") return Response.json({ error: "Method not allowed" }, { status: 405 });
@@ -27,11 +28,15 @@ export default async function handler(request) {
       if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > (isPod ? 10 : available)) throw new Error("The requested size or quantity is no longer available");
       if (product.product_type === "apparel" && !isPod && !["XS", "S", "M", "L", "XL", "XXL"].includes(size)) throw new Error("Choose a valid apparel size");
       if (isPod && (!product.prodigi_sku || !product.prodigi_asset_url)) throw new Error(`This made-to-order product is not configured yet: ${product.title}`);
-      if ((product.shipping_mode || "automatic") === "automatic" && !isStandardParcel(product)) throw new Error(`Custom shipping must be configured for ${product.title}`);
+      if (!isPod && (product.shipping_mode || "automatic") === "automatic" && !isStandardParcel(product)) throw new Error(`Custom shipping must be configured for ${product.title}`);
       return { product, quantity, size };
     });
 
-    const shipping = calculateShipping(items, country);
+    const stockedItems = items.filter(item => item.product.fulfillment_mode !== "prodigi");
+    const podItems = items.filter(item => item.product.fulfillment_mode === "prodigi").map(({ product, quantity }) => ({ ...product, quantity }));
+    const stockedShipping = stockedItems.length ? calculateShipping(stockedItems, country).amount : 0;
+    const prodigiShipping = podItems.length ? await quoteProdigiShipping({ country, items: podItems }) : 0;
+    const shipping = { amount: stockedShipping + prodigiShipping };
     const origin = new URL(request.url).origin;
     const params = new URLSearchParams({
       mode: "payment",

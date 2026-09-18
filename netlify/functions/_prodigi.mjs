@@ -4,6 +4,31 @@ export function isProdigiItem(item) {
   return item.fulfillment_mode === "prodigi";
 }
 
+export async function quoteProdigiShipping({ country, items }) {
+  if (!process.env.PRODIGI_API_KEY) throw new Error("Prodigi is not configured. Add PRODIGI_API_KEY in Netlify.");
+  const podItems = items.filter(item => item.fulfillment_mode === "prodigi");
+  if (!podItems.length) return 0;
+  for (const item of podItems) {
+    if (!item.prodigi_sku) throw new Error(`Prodigi product configuration is missing for ${item.title}`);
+  }
+  const response = await fetch(`${baseUrl()}/v4.0/quotes`, {
+    method: "POST",
+    headers: { "X-API-Key": process.env.PRODIGI_API_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      shippingMethod: "Standard",
+      destinationCountryCode: country,
+      currencyCode: "EUR",
+      items: podItems.map(item => ({ sku: item.prodigi_sku, copies: item.quantity, attributes: item.prodigi_attributes || {}, assets: [{ printArea: "default" }] }))
+    })
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok || !Array.isArray(data?.quotes)) throw new Error(data?.error?.message || data?.message || "Prodigi could not calculate shipping");
+  const quote = data.quotes.find(value => String(value.shipmentMethod).toLowerCase() === "standard") || data.quotes[0];
+  const amount = Number(quote?.costSummary?.shipping?.amount);
+  if (!Number.isFinite(amount) || amount < 0) throw new Error("Prodigi did not return a shipping price");
+  return Math.round(amount * 100);
+}
+
 export async function submitProdigiOrder({ order, items, callbackUrl }) {
   if (!process.env.PRODIGI_API_KEY) throw new Error("Prodigi is not configured. Add PRODIGI_API_KEY in Netlify.");
   if (!order.shipping_address?.line1 || !order.shipping_address?.postal_code || !order.shipping_address?.city || !order.shipping_address?.country) throw new Error("A complete shipping address is required for Prodigi.");
