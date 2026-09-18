@@ -51,7 +51,11 @@ begin
 
   for item in select * from jsonb_array_elements(p_items)
   loop
-    if coalesce(item->>'fulfillment_mode', 'stock') = 'stock' then
+    if coalesce(item->>'fulfillment_mode', 'stock') = 'stock'
+       or (coalesce(item->>'fulfillment_mode', 'stock') = 'prodigi' and exists (
+         select 1 from public.portfolio_items
+         where id = (item->>'id')::uuid and stock_quantity is not null
+       )) then
       update public.portfolio_items
       set stock_quantity = stock_quantity - (item->>'quantity')::integer
       where id = (item->>'id')::uuid and category = 'shop' and stock_quantity >= (item->>'quantity')::integer;

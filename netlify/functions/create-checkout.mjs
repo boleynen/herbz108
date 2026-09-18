@@ -25,7 +25,7 @@ export default async function handler(request) {
       const size = typeof item.size === "string" ? item.size.toUpperCase() : null;
       const isPod = product?.fulfillment_mode === "prodigi";
       const available = product?.product_type === "apparel" && !isPod ? Number(product.size_stock?.[size] || 0) : Number(product?.stock_quantity ?? 1);
-      if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > (isPod ? 10 : available)) throw new Error("The requested size or quantity is no longer available");
+      if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > (isPod ? Math.min(10, product.stock_quantity == null ? 10 : available) : available)) throw new Error("The requested size or quantity is no longer available");
       if (product.product_type === "apparel" && !isPod && !["XS", "S", "M", "L", "XL", "XXL"].includes(size)) throw new Error("Choose a valid apparel size");
       if (isPod && (!product.prodigi_sku || !product.prodigi_asset_url)) throw new Error(`This made-to-order product is not configured yet: ${product.title}`);
       return { product, quantity, size };
