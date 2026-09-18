@@ -12,6 +12,8 @@ alter table public.portfolio_items drop constraint if exists portfolio_items_pro
 alter table public.portfolio_items add constraint portfolio_items_prodigi_sizing_check check (prodigi_sizing in ('fillPrintArea', 'fitPrintArea', 'stretchToPrintArea'));
 
 alter table public.orders add column if not exists prodigi_order_id text unique;
+alter table public.orders add column if not exists confirmation_email_sent_at timestamptz;
+alter table public.orders add column if not exists confirmation_email_id text;
 alter table public.orders add column if not exists prodigi_status text;
 alter table public.orders add column if not exists prodigi_tracking_number text;
 alter table public.orders add column if not exists prodigi_tracking_url text;
