@@ -58,6 +58,7 @@
 .custom-shipping{grid-template-columns:repeat(5,1fr)}
 .delivery-country{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;color:var(--cyan);font:10px monospace;text-transform:uppercase;letter-spacing:.14em}
 .delivery-country select{width:100%;padding:12px;border:1px solid var(--line);background:#101111;color:var(--paper);font:13px monospace}
+.delivery-country strong{padding:12px;border:1px solid var(--line);background:#101111;color:var(--paper);font:13px monospace;text-transform:none;letter-spacing:0}
 .cart-summary>div{padding:5px 0}
 .cart-summary .cart-grand-total{margin-top:8px;padding-top:14px;border-top:1px solid var(--line)}
 @media(max-width:700px){.shipping-dimensions,.custom-shipping{grid-column:auto;grid-template-columns:1fr}}

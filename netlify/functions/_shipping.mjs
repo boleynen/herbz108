@@ -1,9 +1,5 @@
 export const SHIPPING_COUNTRIES = {
-  BE: { name: "Belgium", rates: [680, 685, 690, 930] },
-  NL: { name: "the Netherlands", rates: [1010, 1090, 1170, 1385] },
-  LU: { name: "Luxembourg", rates: [1010, 1090, 1170, 1385] },
-  DE: { name: "Germany", rates: [1225, 1330, 1435, 1650] },
-  FR: { name: "France", rates: [1490, 1730, 1965, 2445] }
+  BE: { name: "Belgium", rates: [680, 685, 690, 930] }
 };
 
 export const PACKAGING = {
