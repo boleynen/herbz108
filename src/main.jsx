@@ -100,7 +100,7 @@ function Admin({ items, onChanged }) {
   const changeSizeStock = (size, value) => setForm(current => ({ ...current, sizeStock: { ...current.sizeStock, [size]: value } }));
   const changeCountryPrice = (country, value) => setForm(current => ({ ...current, customShippingPrices: { ...current.customShippingPrices, [country]: value } }));
   const chooseFiles = event => { const selected = [...event.target.files]; setFiles(current => [...current, ...selected]); event.target.value = ""; };
-  const chooseProdigiPrintFile = event => { setProdigiPrintFile(event.target.files?.[0] || null); event.target.value = ""; };
+  const chooseProdigiPrintFile = event => setProdigiPrintFile(event.target.files?.[0] || null);
   const removeSelectedFile = index => { setFiles(current => current.filter((_, fileIndex) => fileIndex !== index)); setCoverIndex(current => current === index ? 0 : current > index ? current - 1 : current); };
   const stopEditing = () => { setEditingId(null); setForm(initialForm); setFiles([]); setProdigiPrintFile(null); setCoverIndex(0); setMessage(""); scrollTo({ top: 0, behavior: "smooth" }); };
   const startEditing = item => {
