@@ -7,9 +7,9 @@ const IG = "https://instagram.com/herbz108";
 const nav = [["Shop", "/"]];
 const APPAREL_SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
 const PRODIGI_PRESETS = [
-  { id: "fine-art-print-small", label: "Small — 8 × 12 inch (20.3 × 30.5 cm)", sku: "GLOBAL-HGE-8X12", sizing: "fillPrintArea", displayedSize: "20.3 × 30.5 cm" },
-  { id: "fine-art-print-medium", label: "Medium — 12 × 16 inch (30.5 × 40.6 cm)", sku: "GLOBAL-HGE-12X16", sizing: "fillPrintArea", displayedSize: "30.5 × 40.6 cm" },
-  { id: "fine-art-print-large", label: "Large — 18 × 24 inch (45.7 × 61 cm)", sku: "GLOBAL-HGE-18X24", sizing: "fillPrintArea", displayedSize: "45.7 × 61 cm" }
+  { id: "fine-art-print-a4", label: "A4 — 21 × 29.7 cm", sku: "GLOBAL-HGE-A4", sizing: "fillPrintArea", displayedSize: "21 × 29.7 cm" },
+  { id: "fine-art-print-a3", label: "A3 — 29.7 × 42 cm", sku: "GLOBAL-HGE-A3", sizing: "fillPrintArea", displayedSize: "29.7 × 42 cm" },
+  { id: "fine-art-print-a2", label: "A2 — 42 × 59.4 cm", sku: "GLOBAL-HGE-A2", sizing: "fillPrintArea", displayedSize: "42 × 59.4 cm" }
 ];
 const SHIPPING_COUNTRIES = { BE: { name: "Belgium", rates: [680, 685, 690, 930] } };
 const PACKAGING_GRAMS = { apparel: 300, prints: 500, paintings: 1000, sculptures: 1500, other: 500 };
@@ -85,7 +85,7 @@ function Login({ onLogin }) {
   return <main className="admin auth"><section><p className="kicker">Private studio access</p><h1>Admin login.</h1><form onSubmit={submit} className="login-form"><label>Email<input type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} /></label><label>Password<input type="password" required autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} /></label><button className="button button-primary" type="submit">Sign in ↗</button>{message && <p className="form-message">{message}</p>}</form></section></main>;
 }
 function Admin({ items, onChanged }) {
-  const initialForm = { category: "shop", productType: "paintings", canvasType: "", size: "", sizeStock: Object.fromEntries(APPAREL_SIZES.map(size => [size, "0"])), title: "", description: "", price: "", stock: "1", fulfillmentMode: "stock", prodigiPreset: "fine-art-print-small", prodigiSku: "", prodigiAssetUrl: "", prodigiAttributes: "{}", prodigiSizing: "fillPrintArea", shippingWeight: "", shippingWidth: "", shippingHeight: "", shippingDepth: "", shippingMode: "custom", customShippingPrices: emptyCountryPrices() };
+  const initialForm = { category: "shop", productType: "paintings", canvasType: "", size: "", sizeStock: Object.fromEntries(APPAREL_SIZES.map(size => [size, "0"])), title: "", description: "", price: "", stock: "1", fulfillmentMode: "stock", prodigiPreset: "fine-art-print-a4", prodigiSku: "", prodigiAssetUrl: "", prodigiAttributes: "{}", prodigiSizing: "fillPrintArea", shippingWeight: "", shippingWidth: "", shippingHeight: "", shippingDepth: "", shippingMode: "custom", customShippingPrices: emptyCountryPrices() };
   const [session, setSession] = useState(getSession()), [form, setForm] = useState(initialForm), [files, setFiles] = useState([]), [prodigiPrintFile, setProdigiPrintFile] = useState(null), [coverIndex, setCoverIndex] = useState(0), [message, setMessage] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [adminView, setAdminView] = useState("work"), [orders, setOrders] = useState([]), [ordersMessage, setOrdersMessage] = useState("");
