@@ -20,14 +20,16 @@ function automaticRate(weight, country) {
 
 export function calculateShipping(items, country) {
   if (!SHIPPING_COUNTRIES[country]) throw new Error("Choose a supported delivery country");
-  let automaticWeight = 0, packagingWeight = 0, customTotal = 0;
+  let automaticWeight = 0, packagingWeight = 0;
+  const customUnits = [];
 
   for (const { product, quantity } of items) {
     const mode = product.shipping_mode || "automatic";
     if (mode === "custom") {
-      const rate = Number(product.custom_shipping_prices?.[country]);
-      if (!Number.isInteger(rate) || rate < 0) throw new Error(`Shipping is not configured for ${product.title}`);
-      customTotal += rate * quantity;
+      const base = Number(product.custom_shipping_prices?.[country]);
+      const additional = Number(product.additional_shipping_prices?.[country] ?? base);
+      if (!Number.isInteger(base) || base < 0 || !Number.isInteger(additional) || additional < 0) throw new Error(`Shipping is not configured for ${product.title}`);
+      for (let index = 0; index < quantity; index += 1) customUnits.push({ base, additional });
       continue;
     }
     const weight = Number(product.shipping_weight_grams);
@@ -38,6 +40,9 @@ export function calculateShipping(items, country) {
   }
 
   const automaticTotal = automaticWeight ? automaticRate(automaticWeight + packagingWeight, country) : 0;
+  if (!customUnits.length) return { amount: automaticTotal, estimatedWeightGrams: automaticWeight ? automaticWeight + packagingWeight : 0 };
+  const highestIndex = customUnits.reduce((highest, unit, index) => unit.base > customUnits[highest].base ? index : highest, 0);
+  const customTotal = customUnits[highestIndex].base + customUnits.reduce((sum, unit, index) => index === highestIndex ? sum : sum + unit.additional, 0);
   return { amount: automaticTotal + customTotal, estimatedWeightGrams: automaticWeight ? automaticWeight + packagingWeight : 0 };
 }
 

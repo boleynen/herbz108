@@ -14,7 +14,7 @@ export default async function handler(request) {
     const country = typeof payload.country === "string" ? payload.country.toUpperCase() : "";
     if (!SHIPPING_COUNTRIES[country]) throw new Error("Choose a supported delivery country");
     const ids = payload.items.map(item => item.id);
-    const productResponse = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?select=id,title,description,price_cents,category,product_type,stock_quantity,size_stock,shipping_weight_grams,shipping_width_cm,shipping_height_cm,shipping_depth_cm,shipping_mode,custom_shipping_prices,fulfillment_mode,fulfillment_provider,prodigi_sku,prodigi_asset_url,prodigi_attributes,prodigi_sizing&id=in.(${ids.map(encodeURIComponent).join(",")})`, {
+    const productResponse = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?select=id,title,description,price_cents,category,product_type,stock_quantity,size_stock,shipping_weight_grams,shipping_width_cm,shipping_height_cm,shipping_depth_cm,shipping_mode,custom_shipping_prices,additional_shipping_prices,fulfillment_mode,fulfillment_provider,prodigi_sku,prodigi_asset_url,prodigi_attributes,prodigi_sizing&id=in.(${ids.map(encodeURIComponent).join(",")})`, {
       headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }
     });
     if (!productResponse.ok) throw new Error("Could not validate shop products");

@@ -16,6 +16,7 @@ create table if not exists public.portfolio_items (
   shipping_depth_cm numeric,
   shipping_mode text not null default 'automatic' check (shipping_mode in ('automatic', 'custom')),
   custom_shipping_prices jsonb not null default '{}'::jsonb,
+  additional_shipping_prices jsonb not null default '{}'::jsonb,
   stock_quantity integer check (stock_quantity is null or stock_quantity >= 0),
   title text not null,
   description text not null default '',

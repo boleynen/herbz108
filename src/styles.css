@@ -63,6 +63,7 @@
 .delivery-country strong{padding:12px;border:1px solid var(--line);background:#101111;color:var(--paper);font:13px monospace;text-transform:none;letter-spacing:0}
 .cart-summary>div{padding:5px 0}
 .cart-summary .cart-grand-total{margin-top:8px;padding-top:14px;border-top:1px solid var(--line)}
+.shipping-breakdown{padding:8px 0}.shipping-breakdown>span{display:block;margin-bottom:5px;color:var(--dust);font:10px monospace;text-transform:uppercase;letter-spacing:.14em}.shipping-breakdown>div{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font:13px monospace;text-transform:uppercase}.shipping-breakdown>div strong{font-size:16px}.shipping-breakdown p{margin:8px 0;color:var(--dust);font:11px/1.5 monospace;text-transform:none}.shipping-breakdown .shipping-total{margin-top:7px;padding-top:10px;border-top:1px solid var(--line)}
 @media(max-width:700px){.shipping-dimensions,.custom-shipping{grid-column:auto;grid-template-columns:1fr}}
 .admin-form-heading{grid-column:1/-1;display:flex;align-items:flex-start;justify-content:space-between;gap:24px;padding-bottom:22px;border-bottom:1px solid var(--line)}
 .admin-form-heading h2{margin:7px 0 0;font:clamp(24px,3vw,36px)/1 Georgia,serif;text-transform:none;overflow-wrap:anywhere}
