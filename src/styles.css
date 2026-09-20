@@ -78,6 +78,7 @@
 .form-section-help{margin:0;color:var(--dust);font:11px/1.55 monospace}
 .form-section label small{color:var(--dust);font:10px/1.4 monospace;text-transform:none;letter-spacing:0}
 .form-section .admin-size-picker{grid-column:auto;width:100%;box-sizing:border-box}
+.form-section select[name="prodigiColour"] option[value="black"]{background:#111;color:#fff}.form-section select[name="prodigiColour"] option[value="white"]{background:#fff;color:#111}.form-section select[name="prodigiColour"] option[value="silver"]{background:#c5c8ca;color:#111}.form-section select[name="prodigiColour"] option[value="heather_grey"]{background:#9b9b9b;color:#111}.form-section select[name="prodigiColour"] option[value="dark_grey_heather"]{background:#555;color:#fff}
 .admin-form-actions{grid-column:1/-1;display:flex;align-items:center;gap:12px}
 .admin-list>div{grid-template-columns:85px minmax(0,1fr) auto}
 .admin-item-actions{display:flex;align-items:center;gap:8px}
