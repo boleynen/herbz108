@@ -12,7 +12,7 @@ export default async function handler(request) {
     const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
     if (!supabaseUrl || !supabaseKey) throw new Error("Shop database is not configured");
     const ids = payload.items.map(item => item.id);
-    const response = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?select=id,title,category,fulfillment_mode,prodigi_sku,prodigi_attributes&id=in.(${ids.map(encodeURIComponent).join(",")})`, {
+    const response = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?select=id,title,category,fulfillment_mode,prodigi_sku,prodigi_asset_url,prodigi_assets,prodigi_attributes&id=in.(${ids.map(encodeURIComponent).join(",")})`, {
       headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }
     });
     if (!response.ok) throw new Error("Could not validate shop products");

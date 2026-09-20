@@ -14,7 +14,7 @@ export default async function handler(request) {
     const country = typeof payload.country === "string" ? payload.country.toUpperCase() : "";
     if (!SHIPPING_COUNTRIES[country]) throw new Error("Choose a supported delivery country");
     const ids = payload.items.map(item => item.id);
-    const productResponse = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?select=id,title,description,price_cents,category,product_type,stock_quantity,size_stock,shipping_weight_grams,shipping_width_cm,shipping_height_cm,shipping_depth_cm,shipping_mode,custom_shipping_prices,additional_shipping_prices,fulfillment_mode,fulfillment_provider,prodigi_sku,prodigi_asset_url,prodigi_attributes,prodigi_sizing&id=in.(${ids.map(encodeURIComponent).join(",")})`, {
+    const productResponse = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?select=id,title,description,price_cents,category,product_type,stock_quantity,size_stock,shipping_weight_grams,shipping_width_cm,shipping_height_cm,shipping_depth_cm,shipping_mode,custom_shipping_prices,additional_shipping_prices,fulfillment_mode,fulfillment_provider,prodigi_sku,prodigi_asset_url,prodigi_assets,prodigi_attributes,prodigi_sizing&id=in.(${ids.map(encodeURIComponent).join(",")})`, {
       headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }
     });
     if (!productResponse.ok) throw new Error("Could not validate shop products");
@@ -27,13 +27,13 @@ export default async function handler(request) {
       const openEdition = product?.product_type === "prints-open-edition";
       const available = product?.product_type === "apparel" && !isPod ? Number(product.size_stock?.[size] || 0) : openEdition ? Infinity : Number(product?.stock_quantity ?? 1);
       if (!product || !Number.isInteger(quantity) || quantity < 1 || (!openEdition && quantity > (isPod ? Math.min(10, product.stock_quantity == null ? 10 : available) : available))) throw new Error("The requested size or quantity is no longer available");
-      if (product.product_type === "apparel" && !isPod && !["XS", "S", "M", "L", "XL", "XXL"].includes(size)) throw new Error("Choose a valid apparel size");
+      if (product.product_type === "apparel" && !["XS", "S", "M", "L", "XL", "XXL"].includes(size)) throw new Error("Choose a valid apparel size");
       if (isPod && (!product.prodigi_sku || !product.prodigi_asset_url)) throw new Error(`This made-to-order product is not configured yet: ${product.title}`);
       return { product, quantity, size };
     });
 
     const stockedItems = items.filter(item => item.product.fulfillment_mode !== "prodigi");
-    const podItems = items.filter(item => item.product.fulfillment_mode === "prodigi").map(({ product, quantity }) => ({ ...product, quantity }));
+    const podItems = items.filter(item => item.product.fulfillment_mode === "prodigi").map(({ product, quantity, size }) => ({ ...product, quantity, size }));
     const stockedShipping = stockedItems.length ? calculateShipping(stockedItems, country).amount : 0;
     const prodigiShipping = podItems.length ? await quoteProdigiShipping({ country, items: podItems }) : 0;
     const shipping = { amount: stockedShipping + prodigiShipping };

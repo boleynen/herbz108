@@ -83,7 +83,7 @@ export default async function handler(request) {
       if (podItems.length && !savedOrder?.prodigi_order_id) {
         if (!process.env.PRODIGI_WEBHOOK_SECRET) throw new Error("PRODIGI_WEBHOOK_SECRET must be configured before processing POD orders");
         const productIds = podItems.map(item => item.id).join(",");
-        const productResponse = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?select=id,fulfillment_mode,prodigi_sku,prodigi_asset_url,prodigi_attributes,prodigi_sizing&id=in.(${encodeURIComponent(productIds)})`, {
+        const productResponse = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?select=id,fulfillment_mode,prodigi_sku,prodigi_asset_url,prodigi_assets,prodigi_attributes,prodigi_sizing&id=in.(${encodeURIComponent(productIds)})`, {
           headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` }
         });
         if (!productResponse.ok) throw new Error(await productResponse.text());

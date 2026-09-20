@@ -4,6 +4,17 @@ export function isProdigiItem(item) {
   return item.fulfillment_mode === "prodigi";
 }
 
+function prodigiAssets(item, includeUrls = true) {
+  const assets = Array.isArray(item.prodigi_assets) && item.prodigi_assets.length
+    ? item.prodigi_assets
+    : [{ printArea: "default", url: item.prodigi_asset_url }];
+  return assets.filter(asset => asset?.printArea && (!includeUrls || asset?.url)).map(asset => includeUrls ? { printArea: asset.printArea, url: asset.url } : { printArea: asset.printArea });
+}
+
+function prodigiAttributes(item) {
+  return { ...(item.prodigi_attributes || {}), ...(item.size ? { size: String(item.size).toLowerCase() } : {}) };
+}
+
 export async function quoteProdigiShipping({ country, items }) {
   if (!process.env.PRODIGI_API_KEY) throw new Error("Prodigi is not configured. Add PRODIGI_API_KEY in Netlify.");
   const podItems = items.filter(item => item.fulfillment_mode === "prodigi");
@@ -18,7 +29,7 @@ export async function quoteProdigiShipping({ country, items }) {
       shippingMethod: "Standard",
       destinationCountryCode: country,
       currencyCode: "EUR",
-      items: podItems.map(item => ({ sku: item.prodigi_sku, copies: item.quantity, attributes: item.prodigi_attributes || {}, assets: [{ printArea: "default" }] }))
+      items: podItems.map(item => ({ sku: item.prodigi_sku, copies: item.quantity, attributes: prodigiAttributes(item), assets: prodigiAssets(item, false) }))
     })
   });
   const data = await response.json().catch(() => null);
@@ -35,7 +46,7 @@ export async function submitProdigiOrder({ order, items, callbackUrl }) {
   const podItems = items.filter(isProdigiItem);
   if (!podItems.length) return null;
   for (const item of podItems) {
-    if (!item.prodigi_sku || !item.prodigi_asset_url) throw new Error(`Prodigi SKU or print asset is missing for ${item.title}`);
+    if (!item.prodigi_sku || !prodigiAssets(item).length) throw new Error(`Prodigi SKU or print asset is missing for ${item.title}`);
   }
   const payload = {
     merchantReference: `HERBZ108-${order.id}`,
@@ -58,8 +69,8 @@ export async function submitProdigiOrder({ order, items, callbackUrl }) {
       sku: item.prodigi_sku,
       copies: item.quantity,
       sizing: item.prodigi_sizing || "fillPrintArea",
-      attributes: item.prodigi_attributes || {},
-      assets: [{ printArea: "default", url: item.prodigi_asset_url }],
+      attributes: prodigiAttributes(item),
+      assets: prodigiAssets(item),
       recipientCost: { amount: ((item.unit_amount || 0) / 100).toFixed(2), currency: String(order.currency || "eur").toUpperCase() }
     })),
     metadata: { herbzOrderId: order.id, stripeSessionId: order.stripe_session_id }
