@@ -72,6 +72,7 @@
 .form-section{grid-column:1/-1;display:grid;gap:22px;margin:0;padding:26px;border:1px solid var(--line)}
 .form-section>legend{padding:0 10px;color:var(--paper);font:700 12px monospace;text-transform:uppercase;letter-spacing:.13em}
 .form-section-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+.description-field{grid-column:1/-1}.description-field textarea{min-height:150px;line-height:1.55;text-transform:none;letter-spacing:0}
 .form-section-help{margin:0;color:var(--dust);font:11px/1.55 monospace}
 .form-section label small{color:var(--dust);font:10px/1.4 monospace;text-transform:none;letter-spacing:0}
 .form-section .admin-size-picker{grid-column:auto;width:100%;box-sizing:border-box}
