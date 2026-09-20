@@ -82,6 +82,7 @@
 .admin-form.back-only .form-section:nth-of-type(2) .form-section-grid>label:nth-of-type(4){display:none}
 .upload-preview{width:56px;height:56px;object-fit:cover;border:1px solid var(--line);background:var(--paper);display:block;flex:0 0 56px}
 .shop-card-image img,.shop-card:hover .shop-card-image img{filter:none!important}
+.admin-list>div{grid-template-columns:24px 85px 1fr 48px;cursor:grab}.admin-list>div.dragging{opacity:.45}.drag-handle{color:var(--cyan);font:18px monospace;text-align:center;cursor:grab}
 .admin-form-actions{grid-column:1/-1;display:flex;align-items:center;gap:12px}
 .admin-list>div{grid-template-columns:85px minmax(0,1fr) auto}
 .admin-item-actions{display:flex;align-items:center;gap:8px}
