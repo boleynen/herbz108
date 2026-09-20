@@ -120,6 +120,23 @@ export async function insertPortfolioImages(records) {
   if (!response.ok) await parse(response);
 }
 
+export async function deletePortfolioImage(id) {
+  const response = await fetch(`${url}/rest/v1/portfolio_images?id=eq.${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: headers(await authenticatedToken(), { Prefer: "return=minimal" })
+  });
+  if (!response.ok) await parse(response);
+}
+
+export async function updatePortfolioImage(id, record) {
+  const response = await fetch(`${url}/rest/v1/portfolio_images?id=eq.${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: headers(await authenticatedToken(), { "Content-Type": "application/json", Prefer: "return=minimal" }),
+    body: JSON.stringify(record)
+  });
+  if (!response.ok) await parse(response);
+}
+
 export async function deletePortfolioItem(id) {
   const response = await fetch(`${url}/rest/v1/portfolio_items?id=eq.${encodeURIComponent(id)}`, {
     method: "DELETE",
