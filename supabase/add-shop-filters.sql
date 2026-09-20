@@ -9,7 +9,7 @@ drop constraint if exists portfolio_items_product_type_check;
 
 alter table public.portfolio_items
 add constraint portfolio_items_product_type_check
-check (product_type is null or product_type in ('paintings', 'prints', 'apparel', 'sculptures', 'other'));
+check (product_type is null or product_type in ('prints-limited-edition', 'prints-open-edition', 'art-paper', 'art-wood', 'art-canvas', 'apparel', 'objects-deco', 'other'));
 
 -- Existing shop products remain visible under the Other filter.
 update public.portfolio_items

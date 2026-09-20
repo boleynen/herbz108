@@ -6,7 +6,7 @@ create table if not exists public.admin_users (
 create table if not exists public.portfolio_items (
   id uuid primary key default gen_random_uuid(),
   category text not null check (category in ('tattoo', 'art', 'shop')),
-  product_type text check (product_type is null or product_type in ('paintings', 'prints', 'apparel', 'sculptures', 'other')),
+  product_type text check (product_type is null or product_type in ('prints-limited-edition', 'prints-open-edition', 'art-paper', 'art-wood', 'art-canvas', 'apparel', 'objects-deco', 'other')),
   canvas_type text,
   size text,
   size_stock jsonb not null default '{}'::jsonb,
