@@ -77,6 +77,7 @@ export default async function handler(request) {
     params.set("metadata[inventory]", JSON.stringify(items.map(({ product, quantity, size, variantId }) => [product.id, quantity, size, product.fulfillment_mode || "stock", variantId])));
     params.set("metadata[delivery_country]", country);
     params.set("metadata[shipping_amount]", String(shipping.amount));
+    if (giftCard && giftDiscount > 0) { params.set("metadata[giftcard_code]", giftCard.code); params.set("metadata[giftcard_amount]", String(giftDiscount)); }
 
     items.forEach(({ product, quantity, size }, index) => {
       params.set(`line_items[${index}][quantity]`, String(quantity));

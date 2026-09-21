@@ -70,6 +70,10 @@ export default async function handler(request) {
       const supabaseUrl = process.env.VITE_SUPABASE_URL?.replace(/\/$/, "");
       const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
       if (!supabaseUrl || !serviceKey) throw new Error("Supabase webhook access is not configured");
+      if (session.metadata?.giftcard_code && Number(session.metadata?.giftcard_amount) > 0) {
+        const redeemResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/redeem_gift_card`, { method: "POST", headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ p_code: session.metadata.giftcard_code, p_amount_cents: Number(session.metadata.giftcard_amount), p_event_id: event.id }) });
+        if (!redeemResponse.ok) throw new Error(await redeemResponse.text());
+      }
       let giftCardDetails = null;
       const giftCardItem = items.find(item => item.fulfillment_mode === "giftcard");
       if (giftCardItem) {
