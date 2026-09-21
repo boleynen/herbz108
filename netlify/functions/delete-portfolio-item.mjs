@@ -19,8 +19,9 @@ export default async function handler(request) {
     const paths = [...images.map(image => image.storage_path), ...items.map(item => item.storage_path)].filter(Boolean);
     const deleteResponse = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?id=eq.${encodeURIComponent(id)}`, { method: "DELETE", headers: { ...headers, Prefer: "return=minimal" } });
     if (!deleteResponse.ok) throw new Error("Could not delete the portfolio item");
-    const storageResponse = paths.length ? await fetch(`${supabaseUrl}/storage/v1/object/remove`, { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ bucketId: "herbz-images", prefixes: paths }) }) : null;
-    return Response.json({ deleted: true, storageCleaned: !storageResponse || storageResponse.ok });
+    const storageResults = await Promise.all(paths.map(async path => { const response = await fetch(`${supabaseUrl}/storage/v1/object/herbz-images/${path.split("/").map(encodeURIComponent).join("/")}`, { method: "DELETE", headers }); return { path, ok: response.ok, error: response.ok ? null : await response.text() }; }));
+    const failed = storageResults.filter(result => !result.ok);
+    return Response.json({ deleted: true, storageCleaned: failed.length === 0, storageErrors: failed });
   } catch (error) {
     return Response.json({ error: error.message || "Delete failed" }, { status: 400 });
   }
