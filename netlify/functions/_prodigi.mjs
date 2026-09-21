@@ -15,12 +15,25 @@ function prodigiAttributes(item) {
   return { ...(item.prodigi_attributes || {}), ...(item.size ? { size: String(item.size).toLowerCase() } : {}) };
 }
 
+async function validateVariantAvailability(item) {
+  if (!process.env.PRODIGI_API_KEY || !item.prodigi_sku) return;
+  const response = await fetch(`${baseUrl()}/v4.0/products/${encodeURIComponent(item.prodigi_sku)}`, { headers: { "X-API-Key": process.env.PRODIGI_API_KEY } });
+  if (!response.ok) throw new Error(`Could not verify availability for ${item.title}`);
+  const product = await response.json();
+  const wanted = prodigiAttributes(item);
+  const variants = Array.isArray(product.variants) ? product.variants : [];
+  if (!variants.length) return;
+  const matches = variants.some(variant => Object.entries(wanted).every(([key, value]) => String(variant.attributes?.[key] ?? "").toLowerCase() === String(value).toLowerCase()));
+  if (!matches) throw new Error(`The selected colour/size combination is unavailable for ${item.title}`);
+}
+
 export async function quoteProdigiShipping({ country, items }) {
   if (!process.env.PRODIGI_API_KEY) throw new Error("Prodigi is not configured. Add PRODIGI_API_KEY in Netlify.");
   const podItems = items.filter(item => item.fulfillment_mode === "prodigi");
   if (!podItems.length) return 0;
   for (const item of podItems) {
     if (!item.prodigi_sku) throw new Error(`Prodigi product configuration is missing for ${item.title}`);
+    await validateVariantAvailability(item);
   }
   const response = await fetch(`${baseUrl()}/v4.0/quotes`, {
     method: "POST",
