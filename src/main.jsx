@@ -20,7 +20,7 @@ const SHOP_PRODUCT_TYPES = [
 const LEGACY_PRODUCT_TYPES = { paintings: "art-canvas", prints: "prints-open-edition", sculptures: "objects-deco" };
 const productTypeOf = item => LEGACY_PRODUCT_TYPES[item?.product_type] || item?.product_type || "other";
 const productTypeLabel = type => SHOP_PRODUCT_TYPES.find(([value]) => value === type)?.[1] || type;
-const SIZE_PRODUCT_TYPES = new Set(["prints-limited-edition", "prints-open-edition", "art-paper", "art-wood", "art-canvas"]);
+const SIZE_PRODUCT_TYPES = new Set(["prints-limited-edition", "prints-open-edition", "art-paper", "art-wood", "art-canvas", "apparel", "objects-deco"]);
 const PRODIGI_PRESETS_RAW = [
   { id: "hahnemuhle-a4", paper: "Hahnemühle German Etching", label: "A4 — 21 × 29.7 cm", sku: "GLOBAL-HGE-A4", sizing: "fillPrintArea", displayedSize: "21 × 29.7 cm" },
   { id: "hahnemuhle-a3", paper: "Hahnemühle German Etching", label: "A3 — 29.7 × 42 cm", sku: "GLOBAL-HGE-A3", sizing: "fillPrintArea", displayedSize: "29.7 × 42 cm" },
@@ -147,6 +147,7 @@ function Admin({ items, onChanged }) {
   useEffect(() => { const select = document.querySelector('select[name="prodigiPreset"]'); if (!select) return; [...select.options].forEach(option => { const preset = PRODIGI_PRESETS.find(value => value.id === option.value); if (preset && ["Accessories", "Apparel"].includes(preset.paper)) option.textContent = preset.label; }); }, [form.fulfillmentMode]);
   useEffect(() => { const select = document.querySelector('select[name="prodigiPreset"]'); if (!select) return; [...select.options].forEach(option => { const preset = PRODIGI_PRESETS.find(value => value.id === option.value); if (!preset || /-(a2|a3)$/.test(preset.id)) return; if (preset.sku?.startsWith("ART-FAP-SAP")) option.textContent = "Smooth art paper"; else if (preset.sku?.startsWith("GLOBAL-HGE")) option.textContent = "Hahnemühle Photo Rag"; else if (preset.sku?.startsWith("FRA-CLA-SAP")) option.textContent = "Smooth art paper"; else if (preset.sku?.startsWith("FRA-CLA-HGE")) option.textContent = "Hahnemühle Photo Rag"; }); }, [form.fulfillmentMode]);
   useEffect(() => { let variants = []; try { variants = form.variantsJson.trim() ? JSON.parse(form.variantsJson) : []; } catch { return; } const displayed = variants.length > 1 ? "Multiple sizes available" : variants.length === 1 ? variants[0].size : null; if (displayed && form.size !== displayed) setForm(current => ({ ...current, size: displayed })); }, [form.variantsJson]);
+  useEffect(() => { if (form.fulfillmentMode !== "prodigi" || !selectedProdigiPreset) return; const sku = selectedProdigiPreset.sku; const displayed = sku === "GLOBAL-TUBE-SOCKS" ? "One size" : sku === "PATCH-ROUND" ? "3 × 3 inch / 7.62 × 7.62 cm" : sku === "PATCH-SQUARE" ? "4 × 4 inch / 10.16 × 10.16 cm" : sku === "GLOBAL-TEE-BC-3001" ? "XS, S, M, L, XL, XXL" : null; if (displayed && form.size !== displayed) setForm(current => ({ ...current, size: displayed })); }, [form.fulfillmentMode, form.prodigiPreset]);
   if (!databaseConfigured) return <main className="admin"><section><p className="kicker">Setup required</p><h1>Connect database.</h1><p className="notice">Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in Netlify to activate secure login and uploads.</p></section></main>;
   if (!session) return <Login onLogin={setSession} />;
   const change = e => setForm(current => {
