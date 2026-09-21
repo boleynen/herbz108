@@ -26,15 +26,16 @@ export default async function handler(request) {
       const quantity = Number(item.quantity);
       const size = typeof item.size === "string" ? item.size.toUpperCase() : null;
       const isPod = product?.fulfillment_mode === "prodigi";
+      const giftCard = product?.fulfillment_mode === "giftcard";
       const openEdition = product?.product_type === "prints-open-edition";
       const available = product?.product_type === "apparel" && !isPod ? Number(product.size_stock?.[size] || 0) : openEdition ? Infinity : Number(product?.stock_quantity ?? 1);
-      if (!product || !Number.isInteger(quantity) || quantity < 1 || (!openEdition && quantity > (isPod ? Math.min(10, product.stock_quantity == null ? 10 : available) : available))) throw new Error("The requested size or quantity is no longer available");
+      if (!product || !Number.isInteger(quantity) || quantity < 1 || (!giftCard && !openEdition && quantity > (isPod ? Math.min(10, product.stock_quantity == null ? 10 : available) : available))) throw new Error("The requested size or quantity is no longer available");
       if (product.product_type === "apparel" && !["XS", "S", "M", "L", "XL", "XXL"].includes(size)) throw new Error("Choose a valid apparel size");
       if (isPod && (!product.prodigi_sku || !product.prodigi_asset_url)) throw new Error(`This made-to-order product is not configured yet: ${product.title}`);
       return { product, quantity, size, variantId: requestedVariant?.id || null };
     });
 
-    const stockedItems = items.filter(item => item.product.fulfillment_mode !== "prodigi");
+    const stockedItems = items.filter(item => !["prodigi", "giftcard"].includes(item.product.fulfillment_mode));
     const podItems = items.filter(item => item.product.fulfillment_mode === "prodigi").map(({ product, quantity, size, variantId }) => ({ ...product, quantity, size, variantId }));
     const stockedShipping = stockedItems.length ? calculateShipping(stockedItems, country).amount : 0;
     const prodigiShipping = podItems.length ? await quoteProdigiShipping({ country, items: podItems }) : 0;
