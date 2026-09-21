@@ -68,6 +68,15 @@ export default async function handler(request) {
       const supabaseUrl = process.env.VITE_SUPABASE_URL?.replace(/\/$/, "");
       const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
       if (!supabaseUrl || !serviceKey) throw new Error("Supabase webhook access is not configured");
+      const giftCardItem = items.find(item => item.fulfillment_mode === "giftcard");
+      if (giftCardItem) {
+        const amount = Number(giftCardItem.unit_amount ?? giftCardItem.amount_total ?? 0);
+        if (!Number.isInteger(amount) || amount <= 0) throw new Error("Giftcard amount is invalid");
+        const expiry = new Date(); expiry.setFullYear(expiry.getFullYear() + 1);
+        const code = `HERBZ-${event.id.replace(/[^A-Z0-9]/gi, "").slice(-10).toUpperCase()}`;
+        const giftResponse = await fetch(`${supabaseUrl}/rest/v1/gift_cards`, { method: "POST", headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json", Prefer: "resolution=ignore-duplicates,return=minimal" }, body: JSON.stringify({ code, initial_amount_cents: amount, balance_cents: amount, expires_at: expiry.toISOString().slice(0, 10), purchaser_email: session.customer_details?.email || null }) });
+        if (!giftResponse.ok) throw new Error(await giftResponse.text());
+      }
       const response = await fetch(`${supabaseUrl}/rest/v1/rpc/process_paid_order`, {
         method: "POST",
         headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
