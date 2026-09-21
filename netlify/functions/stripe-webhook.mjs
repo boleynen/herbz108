@@ -51,7 +51,7 @@ export default async function handler(request) {
     const event = JSON.parse(payload);
     const session = event.data?.object;
     if (["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type) && session?.payment_status === "paid") {
-      const inventory = JSON.parse(session.metadata?.inventory || "[]").map(([id, quantity, size, fulfillmentMode]) => ({ id, quantity, size: size || null, fulfillment_mode: fulfillmentMode || "stock" }));
+      const inventory = JSON.parse(session.metadata?.inventory || "[]").map(([id, quantity, size, fulfillmentMode, variantId]) => ({ id, quantity, size: size || null, variantId: variantId || null, fulfillment_mode: fulfillmentMode || "stock" }));
       if (!inventory.length) throw new Error("Checkout session contains no inventory data");
       const lineItemResponse = await fetch(`https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(session.id)}/line_items?limit=100`, {
         headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` }
@@ -83,7 +83,7 @@ export default async function handler(request) {
       if (podItems.length && !savedOrder?.prodigi_order_id) {
         if (!process.env.PRODIGI_WEBHOOK_SECRET) throw new Error("PRODIGI_WEBHOOK_SECRET must be configured before processing POD orders");
         const productIds = podItems.map(item => item.id).join(",");
-        const productResponse = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?select=id,fulfillment_mode,prodigi_sku,prodigi_asset_url,prodigi_assets,prodigi_attributes,prodigi_sizing&id=in.(${encodeURIComponent(productIds)})`, {
+        const productResponse = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?select=id,fulfillment_mode,prodigi_sku,prodigi_asset_url,prodigi_assets,prodigi_attributes,prodigi_sizing,variants&id=in.(${encodeURIComponent(productIds)})`, {
           headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` }
         });
         if (!productResponse.ok) throw new Error(await productResponse.text());
@@ -91,7 +91,7 @@ export default async function handler(request) {
         const origin = new URL(request.url).origin;
         const prodigiOrder = await submitProdigiOrder({
           order: savedOrder,
-          items: podItems.map(item => ({ ...item, ...podCatalog[item.id] })),
+          items: podItems.map(item => { const product = podCatalog[item.id]; const variant = (product?.variants || []).find(value => value.id === item.variantId); return { ...item, ...product, ...(variant ? { prodigi_sku: variant.prodigi_sku || product.prodigi_sku, prodigi_asset_url: variant.prodigi_asset_url || product.prodigi_asset_url, prodigi_assets: variant.prodigi_assets || product.prodigi_assets, prodigi_attributes: { ...(product.prodigi_attributes || {}), ...(variant.prodigi_attributes || {}) } } : {}) }; }),
           callbackUrl: `${origin}/.netlify/functions/prodigi-webhook?token=${encodeURIComponent(process.env.PRODIGI_WEBHOOK_SECRET)}`
         });
         const tracking = shipmentTracking(prodigiOrder);

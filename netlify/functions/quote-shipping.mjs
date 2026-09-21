@@ -12,13 +12,15 @@ export default async function handler(request) {
     const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
     if (!supabaseUrl || !supabaseKey) throw new Error("Shop database is not configured");
     const ids = payload.items.map(item => item.id);
-    const response = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?select=id,title,category,fulfillment_mode,prodigi_sku,prodigi_asset_url,prodigi_assets,prodigi_attributes&id=in.(${ids.map(encodeURIComponent).join(",")})`, {
+    const response = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?select=id,title,category,fulfillment_mode,prodigi_sku,prodigi_asset_url,prodigi_assets,prodigi_attributes,variants&id=in.(${ids.map(encodeURIComponent).join(",")})`, {
       headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }
     });
     if (!response.ok) throw new Error("Could not validate shop products");
     const catalog = Object.fromEntries((await response.json()).filter(item => item.category === "shop").map(item => [item.id, item]));
     const items = payload.items.map(item => {
-      const product = catalog[item.id];
+      const baseProduct = catalog[item.id];
+      const variant = typeof item.variantId === "string" ? (baseProduct?.variants || []).find(value => value.id === item.variantId) : null;
+      const product = variant ? { ...baseProduct, ...variant, prodigi_sku: variant.prodigi_sku || baseProduct.prodigi_sku, prodigi_asset_url: variant.prodigi_asset_url || baseProduct.prodigi_asset_url, prodigi_assets: variant.prodigi_assets || baseProduct.prodigi_assets } : baseProduct;
       const quantity = Number(item.quantity);
       if (!product || product.fulfillment_mode !== "prodigi" || !Number.isInteger(quantity) || quantity < 1 || quantity > 10) throw new Error("Shipping quote is only available for valid made-to-order products");
       return { ...product, quantity };
