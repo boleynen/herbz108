@@ -51,6 +51,15 @@ export default async function handler(request) {
     const prodigiShipping = podItems.length ? await quoteProdigiShipping({ country, items: podItems }) : 0;
     const shipping = { amount: stockedShipping + prodigiShipping };
     const origin = new URL(request.url).origin;
+    const productSubtotal = items.reduce((sum, item) => sum + Number(item.product.price_cents || 0) * item.quantity, 0);
+    const giftDiscount = giftCard ? Math.min(Number(giftCard.balance_cents), productSubtotal) : 0;
+    let giftCouponId = null;
+    if (giftDiscount > 0) {
+      const couponResponse = await fetch("https://api.stripe.com/v1/coupons", { method: "POST", headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`, "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ amount_off: String(giftDiscount), currency: "eur", duration: "once", name: `Giftcard ${giftCard.code}` }) });
+      const coupon = await couponResponse.json();
+      if (!couponResponse.ok) throw new Error(coupon?.error?.message || "Could not apply giftcard discount");
+      giftCouponId = coupon.id;
+    }
     const params = new URLSearchParams({
       mode: "payment",
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -63,6 +72,7 @@ export default async function handler(request) {
       "shipping_options[0][shipping_rate_data][fixed_amount][currency]": "eur",
       "shipping_options[0][shipping_rate_data][display_name]": `Tracked shipping to ${SHIPPING_COUNTRIES[country].name}`
     });
+    if (giftCouponId) params.set("discounts[0][coupon]", giftCouponId);
 
     params.set("metadata[inventory]", JSON.stringify(items.map(({ product, quantity, size, variantId }) => [product.id, quantity, size, product.fulfillment_mode || "stock", variantId])));
     params.set("metadata[delivery_country]", country);
