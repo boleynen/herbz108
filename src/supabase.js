@@ -138,9 +138,7 @@ export async function updatePortfolioImage(id, record) {
 }
 
 export async function deletePortfolioItem(id) {
-  const response = await fetch(`${url}/rest/v1/portfolio_items?id=eq.${encodeURIComponent(id)}`, {
-    method: "DELETE",
-    headers: headers(await authenticatedToken(), { Prefer: "return=minimal" })
-  });
+  const token = await authenticatedToken();
+  const response = await fetch("/.netlify/functions/delete-portfolio-item", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ id }) });
   if (!response.ok) await parse(response);
 }
