@@ -5,7 +5,7 @@ const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, character =>
 const euro = cents => new Intl.NumberFormat("en-BE", { style: "currency", currency: "EUR" }).format((cents || 0) / 100);
 const addressLines = address => address ? [address.line1, address.line2, [address.postal_code, address.city].filter(Boolean).join(" "), address.state, address.country].filter(Boolean) : [];
 
-async function sendOrderConfirmation({ session, items, customerName, shippingAddress }) {
+async function sendOrderConfirmation({ session, items, customerName, shippingAddress, giftCardDetails }) {
   if (!process.env.BREVO_API_KEY || !process.env.BREVO_FROM_EMAIL || !session.customer_details?.email) {
     console.warn("Order confirmation email skipped: Brevo or customer email is not configured");
     return null;
@@ -16,6 +16,8 @@ async function sendOrderConfirmation({ session, items, customerName, shippingAdd
   const addressText = addressLines(shippingAddress).join("\n") || "No shipping address was supplied.";
   const addressHtml = addressLines(shippingAddress).map(escapeHtml).join("<br>") || "No shipping address was supplied.";
   const firstName = customerName?.trim()?.split(/\s+/)[0] || "there";
+  const giftCardText = giftCardDetails ? `\n\nDIGITAL GIFTCARD\nCode: ${giftCardDetails.code}\nValue: ${euro(giftCardDetails.amount)}\nValid until: ${giftCardDetails.expiresAt}` : "";
+  const giftCardHtml = giftCardDetails ? `<div style="margin:28px 0;padding:24px;border:1px solid #b28d2e"><h2 style="margin-top:0">Digital gift card</h2><p>Code: <strong>${escapeHtml(giftCardDetails.code)}</strong></p><p>Value: ${escapeHtml(euro(giftCardDetails.amount))}</p><p>Valid until: ${escapeHtml(giftCardDetails.expiresAt)}</p></div>` : "";
   const response = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
     headers: { "api-key": process.env.BREVO_API_KEY, "Content-Type": "application/json" },
@@ -24,8 +26,8 @@ async function sendOrderConfirmation({ session, items, customerName, shippingAdd
       to: [{ email: session.customer_details.email }],
       replyTo: { email: "herbzbooking@protonmail.com" },
       subject: `Your HERBZ108 order is confirmed — #${orderNumber}`,
-      textContent: `Thank you, ${firstName}.\n\nYour payment was successful and your HERBZ108 order has been received.\n\nOrder #${orderNumber}\n\n${itemText}\n\nTotal paid: ${euro(session.amount_total)}\n\nShipping address:\n${addressText}\n\nYour order will be carefully prepared for shipping.\n\nThank you for supporting independent art.\n\nHERBZ108\nKasterlee, Belgium`,
-      htmlContent: `<div style="background:#080909;color:#e8e5de;padding:40px 20px;font-family:Arial,sans-serif"><div style="max-width:620px;margin:auto"><p style="color:#b28d2e;font:12px monospace;letter-spacing:.14em;text-transform:uppercase">HERBZ108 · Order confirmed</p><h1 style="font:42px Georgia,serif;margin:18px 0">Thank you, ${escapeHtml(firstName)}.</h1><p style="line-height:1.6;color:#c9c5bc">Your payment was successful and your HERBZ108 order has been received.</p><p style="font:13px monospace;color:#b28d2e">Order #${escapeHtml(orderNumber)}</p><table style="width:100%;margin:28px 0;border-collapse:collapse;color:#e8e5de;font:14px monospace">${itemHtml}<tr><td style="padding:16px 0;font-weight:bold">Total paid</td><td style="padding:16px 0;text-align:right;font-weight:bold">${escapeHtml(euro(session.amount_total))}</td></tr></table><h2 style="font:22px Georgia,serif">Shipping address</h2><p style="line-height:1.6;color:#c9c5bc">${addressHtml}</p><p style="margin-top:30px;line-height:1.6;color:#c9c5bc">Your order will be carefully prepared for shipping.</p><p style="margin-top:36px">Thank you for supporting independent art.<br><strong>HERBZ108</strong><br>Kasterlee, Belgium</p></div></div>`
+      textContent: `Thank you, ${firstName}.\n\nYour payment was successful and your HERBZ108 order has been received.\n\nOrder #${orderNumber}\n\n${itemText}${giftCardText}\n\nTotal paid: ${euro(session.amount_total)}\n\nShipping address:\n${addressText}\n\nThank you for supporting independent art.\n\nHERBZ108\nKasterlee, Belgium`,
+      htmlContent: `<div style="background:#080909;color:#e8e5de;padding:40px 20px;font-family:Arial,sans-serif"><div style="max-width:620px;margin:auto"><p style="color:#b28d2e;font:12px monospace;letter-spacing:.14em;text-transform:uppercase">HERBZ108 · Order confirmed</p><h1 style="font:42px Georgia,serif;margin:18px 0">Thank you, ${escapeHtml(firstName)}.</h1><p style="line-height:1.6;color:#c9c5bc">Your payment was successful and your HERBZ108 order has been received.</p><p style="font:13px monospace;color:#b28d2e">Order #${escapeHtml(orderNumber)}</p><table style="width:100%;margin:28px 0;border-collapse:collapse;color:#e8e5de;font:14px monospace">${itemHtml}<tr><td style="padding:16px 0;font-weight:bold">Total paid</td><td style="padding:16px 0;text-align:right;font-weight:bold">${escapeHtml(euro(session.amount_total))}</td></tr></table>${giftCardHtml}<p style="margin-top:36px">Thank you for supporting independent art.<br><strong>HERBZ108</strong><br>Kasterlee, Belgium</p></div></div>`
     })
   });
   const result = await response.json();
@@ -68,12 +70,14 @@ export default async function handler(request) {
       const supabaseUrl = process.env.VITE_SUPABASE_URL?.replace(/\/$/, "");
       const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
       if (!supabaseUrl || !serviceKey) throw new Error("Supabase webhook access is not configured");
+      let giftCardDetails = null;
       const giftCardItem = items.find(item => item.fulfillment_mode === "giftcard");
       if (giftCardItem) {
         const amount = Number(giftCardItem.unit_amount ?? giftCardItem.amount_total ?? 0);
         if (!Number.isInteger(amount) || amount <= 0) throw new Error("Giftcard amount is invalid");
         const expiry = new Date(); expiry.setFullYear(expiry.getFullYear() + 1);
         const code = `HERBZ-${event.id.replace(/[^A-Z0-9]/gi, "").slice(-10).toUpperCase()}`;
+        giftCardDetails = { code, amount, expiresAt: expiry.toISOString().slice(0, 10) };
         const giftResponse = await fetch(`${supabaseUrl}/rest/v1/gift_cards`, { method: "POST", headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json", Prefer: "resolution=ignore-duplicates,return=minimal" }, body: JSON.stringify({ code, initial_amount_cents: amount, balance_cents: amount, expires_at: expiry.toISOString().slice(0, 10), purchaser_email: session.customer_details?.email || null }) });
         if (!giftResponse.ok) throw new Error(await giftResponse.text());
       }
@@ -112,7 +116,7 @@ export default async function handler(request) {
         if (!podUpdate.ok) throw new Error(await podUpdate.text());
       }
       if (!savedOrder?.confirmation_email_sent_at) {
-        const emailId = await sendOrderConfirmation({ session, items, customerName, shippingAddress });
+        const emailId = await sendOrderConfirmation({ session, items, customerName, shippingAddress, giftCardDetails });
         if (emailId) {
           const emailUpdate = await fetch(`${supabaseUrl}/rest/v1/orders?stripe_event_id=eq.${encodeURIComponent(event.id)}`, {
             method: "PATCH",
