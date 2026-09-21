@@ -107,3 +107,4 @@
  .cart-format{grid-column:2;color:var(--cyan)!important;font:10px monospace!important;text-transform:uppercase;letter-spacing:.1em}
 .admin-form.giftcard-mode>.form-section:nth-of-type(2),.admin-form.giftcard-mode>.form-section:nth-of-type(3){display:none}
 .giftcard-hidden-field{display:none!important}
+.shop-card-info h2 + p{display:none}
