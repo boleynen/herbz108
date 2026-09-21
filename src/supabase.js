@@ -57,9 +57,11 @@ export async function signIn(email, password) {
 
 export function signOut() { localStorage.removeItem(sessionKey); }
 
-export async function fetchPortfolio() {
+export async function fetchPortfolio(includeHidden = false) {
   if (!databaseConfigured) return [];
-  const items = await fetch(`${url}/rest/v1/portfolio_items?select=*&order=created_at.desc`, { headers: headers() }).then(parse);
+  const visibility = includeHidden ? "" : "&is_hidden=eq.false";
+  const token = includeHidden ? await authenticatedToken().catch(() => null) : null;
+  const items = await fetch(`${url}/rest/v1/portfolio_items?select=*${visibility}&order=created_at.desc`, { headers: headers(token) }).then(parse);
   const imageResponse = await fetch(`${url}/rest/v1/portfolio_images?select=*&order=sort_order.asc`, { headers: headers() });
   if (!imageResponse.ok) return items.map(item => ({ ...item, images: [{ image_url: item.image_url, storage_path: item.storage_path, is_cover: true }] }));
   const images = await imageResponse.json();
