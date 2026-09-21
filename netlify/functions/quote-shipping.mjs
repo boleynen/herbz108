@@ -15,7 +15,7 @@ export default async function handler(request) {
     const response = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?select=id,title,category,fulfillment_mode,prodigi_sku,prodigi_asset_url,prodigi_assets,prodigi_attributes,variants&id=in.(${ids.map(encodeURIComponent).join(",")})`, {
       headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }
     });
-    if (!response.ok) throw new Error("Could not validate shop products");
+    if (!response.ok) { const details = await response.text(); throw new Error(`Could not validate shop products${details ? `: ${details.slice(0, 240)}` : ""}`); }
     const catalog = Object.fromEntries((await response.json()).filter(item => item.category === "shop").map(item => [item.id, item]));
     const items = payload.items.map(item => {
       const baseProduct = catalog[item.id];
