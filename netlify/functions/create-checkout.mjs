@@ -10,7 +10,17 @@ export default async function handler(request) {
     if (!Array.isArray(payload.items) || payload.items.length === 0 || payload.items.length > 10) throw new Error("Invalid cart");
     const supabaseUrl = process.env.VITE_SUPABASE_URL?.replace(/\/$/, "");
     const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!supabaseUrl || !supabaseKey) throw new Error("Shop database is not configured");
+    let giftCard = null;
+    if (payload.giftcardCode) {
+      if (!serviceKey) throw new Error("Giftcard validation is not configured");
+      const giftResponse = await fetch(`${supabaseUrl}/rest/v1/gift_cards?select=code,balance_cents,expires_at,status&code=ilike.${encodeURIComponent(String(payload.giftcardCode).trim())}&limit=1`, { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } });
+      if (!giftResponse.ok) throw new Error("Giftcard validation failed");
+      const [card] = await giftResponse.json();
+      if (!card || card.status !== "active" || card.expires_at < new Date().toISOString().slice(0, 10) || card.balance_cents <= 0) throw new Error("This giftcard is invalid, expired or has no remaining balance");
+      giftCard = card;
+    }
     const country = typeof payload.country === "string" ? payload.country.toUpperCase() : "";
     if (!SHIPPING_COUNTRIES[country]) throw new Error("Choose a supported delivery country");
     const ids = payload.items.map(item => item.id);
