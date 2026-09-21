@@ -110,3 +110,4 @@
 .shop-card-info h2 + p{display:none}
 .cart-item>div:nth-child(2)>p:first-of-type{display:none}
 .giftcard-cart-control{margin:22px 0;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.giftcard-toggle{border:0;background:transparent;color:var(--cyan);padding:0;font:11px monospace;text-transform:uppercase;letter-spacing:.12em;cursor:pointer}.giftcard-panel{display:flex;gap:8px;margin-top:14px}.giftcard-panel input{min-width:0;flex:1}.giftcard-apply{border:1px solid var(--cyan);background:var(--cyan);color:var(--ink);padding:0 16px;font:11px monospace;text-transform:uppercase;cursor:pointer}
+.giftcard-panel[hidden]{display:none}
