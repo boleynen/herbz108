@@ -142,5 +142,5 @@ export async function deletePortfolioItem(id) {
   const response = await fetch("/.netlify/functions/delete-portfolio-item", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ id }) });
   if (!response.ok) await parse(response);
   const result = await response.json().catch(() => ({}));
-  if (result.storageCleaned === false) throw new Error("Item deleted, but one or more image files could not be removed from Storage.");
+  if (result.storageCleaned === false) throw new Error(`Item deleted, but Storage cleanup failed: ${result.storageErrors?.[0]?.error || "unknown Storage error"}`);
 }
