@@ -19,7 +19,7 @@ export default async function handler(request) {
     const paths = [...new Set([...images.map(image => image.storage_path), ...items.flatMap(item => [item.storage_path, item.prodigi_asset_url, ...(Array.isArray(item.prodigi_assets) ? item.prodigi_assets.map(asset => asset.url) : [])])].filter(Boolean).map(path => String(path).replace(/^.*\/storage\/v1\/object\/public\/herbz-images\//, "").replace(/^.*\/storage\/v1\/object\/herbz-images\//, "")))];
     const deleteResponse = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?id=eq.${encodeURIComponent(id)}`, { method: "DELETE", headers: { ...headers, Prefer: "return=minimal" } });
     if (!deleteResponse.ok) throw new Error("Could not delete the portfolio item");
-    const storageResults = await Promise.all(paths.map(async path => { const response = await fetch(`${supabaseUrl}/storage/v1/object/herbz-images/${path.split("/").map(encodeURIComponent).join("/")}`, { method: "DELETE", headers }); return { path, ok: response.ok, error: response.ok ? null : await response.text() }; }));
+    const storageResults = await Promise.all(paths.map(async path => { const response = await fetch(`${supabaseUrl}/storage/v1/object/herbz-images/${path.split("/").map(encodeURIComponent).join("/")}`, { method: "DELETE", headers }); return { path, ok: response.ok || response.status === 404, error: response.ok || response.status === 404 ? null : await response.text() }; }));
     const failed = storageResults.filter(result => !result.ok);
     return Response.json({ deleted: true, storageCleaned: failed.length === 0, storageErrors: failed });
   } catch (error) {
