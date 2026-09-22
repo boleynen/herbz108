@@ -261,6 +261,7 @@ function Admin({ items, onChanged }) {
   const prodigiFileAccept = selectedProdigiPreset?.fileAccept || ".jpg,.jpeg,.pdf,image/jpeg,application/pdf";
   const prodigiUploadHelp = selectedProdigiPreset?.uploadHelp || "Use a JPG or PDF. This original file is sent to Prodigi, but is not shown in the shop.";
   const selectedPrintFileCheck = printFileCheck(prodigiPrintDimensions, selectedProdigiPreset);
+  useEffect(() => { if (adminView !== "giftcards") return; document.querySelectorAll(".giftcard-table tbody tr").forEach(row => { const actionCells = [...row.querySelectorAll("td")].filter(cell => cell.querySelector(".giftcard-action")); actionCells.slice(1).forEach(cell => cell.remove()); }); }, [adminView, giftCards]);
   async function changeGiftCard(card, record) { try { const updated = await updateGiftCard(card.id, record); setGiftCards(current => current.map(value => value.id === card.id ? { ...value, ...updated } : value)); } catch (error) { setGiftCardsMessage(error.message); } }
   const isBellaCanvasTee = selectedProdigiPreset?.sku === "GLOBAL-TEE-BC-3001";
   const isOpenEdition = form.category === "shop" && form.productType === "prints-open-edition";
