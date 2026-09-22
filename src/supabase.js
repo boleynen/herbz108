@@ -78,6 +78,13 @@ export async function fetchOrders() {
   }).then(parse);
 }
 
+export async function fetchGiftCards() {
+  if (!databaseConfigured) return [];
+  return fetch(`${url}/rest/v1/gift_cards?select=*&order=created_at.desc`, {
+    headers: headers(await authenticatedToken())
+  }).then(parse);
+}
+
 export async function uploadPortfolioImage(file, path) {
   await fetch(`${url}/storage/v1/object/herbz-images/${path}`, {
     method: "POST",
