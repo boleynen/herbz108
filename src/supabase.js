@@ -85,6 +85,15 @@ export async function fetchGiftCards() {
   }).then(parse);
 }
 
+export async function updateGiftCard(id, record) {
+  const response = await fetch(`${url}/rest/v1/gift_cards?id=eq.${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: headers(await authenticatedToken(), { "Content-Type": "application/json", Prefer: "return=representation" }),
+    body: JSON.stringify(record)
+  });
+  return (await parse(response))[0];
+}
+
 export async function uploadPortfolioImage(file, path) {
   await fetch(`${url}/storage/v1/object/herbz-images/${path}`, {
     method: "POST",
