@@ -66,7 +66,7 @@ function SocialRail() {
   return <aside className="social-rail" aria-label="Social media">
     <a href={IG} target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5" /><circle cx="12" cy="12" r="4" /><circle className="social-dot" cx="17.4" cy="6.7" r=".9" /></svg></a>
     <button type="button" disabled aria-label="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M13.7 19v-6h2l.3-2.3h-2.3V9.2c0-.7.2-1.2 1.2-1.2H16V6c-.3 0-.9-.1-1.7-.1-1.8 0-3 1.1-3 3.1v1.7H9.4V13h1.9v6h2.4Z" /></svg></button>
-    <button type="button" disabled aria-label="Twitter"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M7.7 9.2c.8.5 1.7.7 2.6.7a4 4 0 0 0 4.1 4.1 8.2 8.2 0 0 0 5-1.7 2.9 2.9 0 0 1-.8.1 2.9 2.9 0 0 0 2.3-1.1 5.8 5.8 0 0 1-1.8.7 2.8 2.8 0 0 0 1.2-1.6 5.6 5.6 0 0 1-1.8.7 2.9 2.9 0 0 0-5 2.7 8.1 8.1 0 0 1-5.9-3 2.8 2.8 0 0 0 .9 3.7 2.8 2.8 0 0 1-1.3-.4 2.9 2.9 0 0 0 2.3 2.8 3 3 0 0 1-1.3 0 2.9 2.9 0 0 0 2.7 2 5.8 5.8 0 0 1-4.2 1.2 8.2 8.2 0 0 0 4.5 1.3c5.4 0 8.4-4.5 8.4-8.4v-.4a5.7 5.7 0 0 0 1.5-1.5 5.7 5.7 0 0 1-1.7.5 2.8 2.8 0 0 0 1.3-1.6 5.6 5.6 0 0 1-1.8.7 2.9 2.9 0 0 0-5 2.7c0 .2 0 .4.1.6a8.2 8.2 0 0 1-6-3Z" /></svg></button>
+    <button type="button" disabled aria-label="X"><svg className="x-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.2 5.5 17.6 18.5M17.8 5.5 6.3 18.5" /></svg></button>
   </aside>;
 }
 
