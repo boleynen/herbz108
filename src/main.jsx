@@ -63,10 +63,14 @@ function isStandardParcel(form) { if (!["paintings", "prints", "sculptures"].inc
 function go(path) { history.pushState({}, "", path); dispatchEvent(new PopStateEvent("popstate")); scrollTo(0, 0); }
 function Link({ to, children, className = "" }) { return <a href={to} className={className} onClick={event => { if (to.startsWith("/#")) { event.preventDefault(); go(to); requestAnimationFrame(() => document.querySelector(to.slice(1))?.scrollIntoView({ behavior: "smooth" })); } else if (to.startsWith("/")) { event.preventDefault(); go(to); } }}>{children}</a>; }
 
+function SocialLabel({ children }) {
+  return <span className="social-label" aria-hidden="true">{[...children].map((letter, index) => <span className="social-letter" style={{ "--letter-index": index }} key={`${letter}-${index}`}>{letter}</span>)}</span>;
+}
+
 function SocialRail() {
   return <aside className="social-rail" aria-label="Social media">
-    <a href={IG} target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5" /><circle cx="12" cy="12" r="4" /><circle className="social-dot" cx="17.4" cy="6.7" r=".9" /></svg></a>
-    <a href="https://www.facebook.com/herbertmaillardart/" target="_blank" rel="noreferrer" aria-label="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M13.7 19v-6h2l.3-2.3h-2.3V9.2c0-.7.2-1.2 1.2-1.2H16V6c-.3 0-.9-.1-1.7-.1-1.8 0-3 1.1-3 3.1v1.7H9.4V13h1.9v6h2.4Z" /></svg></a>
+    <a href={IG} target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5" /><circle cx="12" cy="12" r="4" /><circle className="social-dot" cx="17.4" cy="6.7" r=".9" /></svg><SocialLabel>Instagram</SocialLabel></a>
+    <a href="https://www.facebook.com/herbertmaillardart/" target="_blank" rel="noreferrer" aria-label="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M13.7 19v-6h2l.3-2.3h-2.3V9.2c0-.7.2-1.2 1.2-1.2H16V6c-.3 0-.9-.1-1.7-.1-1.8 0-3 1.1-3 3.1v1.7H9.4V13h1.9v6h2.4Z" /></svg><SocialLabel>Facebook</SocialLabel></a>
   </aside>;
 }
 
