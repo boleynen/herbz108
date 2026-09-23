@@ -122,3 +122,4 @@ h1,h2,h3,.manifesto strong,.empty-gallery h3{font-family:"Gontserrat",Arial,sans
 .kicker,.eyebrow,.footer-label,.order-label,.stock-label,.construction-banner,.giftcard-table th{font-family:monospace!important}
 .empty-gallery h3{font-size:clamp(1.35rem,2.5vw,2.15rem)!important;letter-spacing:-.03em}
 body,input,select,textarea,p:not(.kicker),li,dd,dt,address,.story>p,.contact-grid aside,.empty-gallery>p:last-child,.shop-intro>p,.shop-contact p,.print-details p:not(.kicker),.product-description{font-family:"Noto Sans Indic Siyaq Numbers",sans-serif!important}
+.logo b{font-family:Arial,Helvetica,sans-serif!important}
