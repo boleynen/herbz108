@@ -120,3 +120,4 @@
 .hero{min-height:520px;background:#0a0b0b}.hero-art,.vertical-note,.scroll-note{display:none}.hero-copy{padding-top:0}.hero h1{font-family:Arial,Helvetica,sans-serif;font-size:clamp(2.4rem,5vw,4.4rem);line-height:1;letter-spacing:-.07em}.hero h1 em{font:inherit;color:inherit;-webkit-text-stroke:0}.hero h1 em:after{display:none}.hero-intro{margin:24px 0 26px;font-size:17px;max-width:430px}
 h1,h2,h3,.manifesto strong,.empty-gallery h3{font-family:"Gontserrat",Arial,sans-serif!important;font-style:normal;text-transform:uppercase!important}p:not(.kicker),li,dd,dt,address{font-family:Arial,Helvetica,sans-serif!important}
 .kicker,.eyebrow,.footer-label,.order-label,.stock-label,.construction-banner,.giftcard-table th{font-family:monospace!important}
+.empty-gallery h3{font-size:clamp(1.35rem,2.5vw,2.15rem)!important;letter-spacing:-.03em}
