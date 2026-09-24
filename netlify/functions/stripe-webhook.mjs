@@ -5,6 +5,7 @@ const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, character =>
 const euro = cents => new Intl.NumberFormat("en-BE", { style: "currency", currency: "EUR" }).format((cents || 0) / 100);
 const addressLines = address => address ? [address.line1, address.line2, [address.postal_code, address.city].filter(Boolean).join(" "), address.state, address.country].filter(Boolean) : [];
 const ORDER_NOTIFICATION_EMAIL = "herbz108.orders@gmail.com";
+const fulfilmentLabel = item => item.fulfillment_mode === "prodigi" ? "PRODIGI item" : item.fulfillment_mode === "giftcard" ? "Digital gift card" : "Own stock item";
 
 async function sendOrderConfirmation({ session, items, customerName, shippingAddress, giftCardDetails }) {
   if (!process.env.BREVO_API_KEY || !process.env.BREVO_FROM_EMAIL || !session.customer_details?.email) {
@@ -42,8 +43,8 @@ async function sendMerchantOrderNotification({ session, items, customerName, shi
     return null;
   }
   const orderNumber = session.id.slice(-10).toUpperCase();
-  const itemText = items.map(item => `${item.quantity} × ${item.title} — ${euro(item.amount_total ?? item.unit_amount * item.quantity)}`).join("\n");
-  const itemHtml = items.map(item => `<tr><td style="padding:10px 0;border-bottom:1px solid #d8d3c8">${item.quantity} × ${escapeHtml(item.title)}</td><td style="padding:10px 0;border-bottom:1px solid #d8d3c8;text-align:right;white-space:nowrap">${escapeHtml(euro(item.amount_total ?? item.unit_amount * item.quantity))}</td></tr>`).join("");
+  const itemText = items.map(item => `${item.quantity} × ${item.title} — ${fulfilmentLabel(item)} — ${euro(item.amount_total ?? item.unit_amount * item.quantity)}`).join("\n");
+  const itemHtml = items.map(item => `<tr><td style="padding:10px 0;border-bottom:1px solid #d8d3c8">${item.quantity} × ${escapeHtml(item.title)}<br><span style="color:#b28d2e;font-size:11px;text-transform:uppercase">${escapeHtml(fulfilmentLabel(item))}</span></td><td style="padding:10px 0;border-bottom:1px solid #d8d3c8;text-align:right;white-space:nowrap">${escapeHtml(euro(item.amount_total ?? item.unit_amount * item.quantity))}</td></tr>`).join("");
   const addressText = addressLines(shippingAddress).join("\n") || "No shipping address was supplied.";
   const addressHtml = addressLines(shippingAddress).map(escapeHtml).join("<br>") || "No shipping address was supplied.";
   const giftCardText = giftCardDetails ? `\n\nGIFT CARD GENERATED\nCode: ${giftCardDetails.code}\nValue: ${euro(giftCardDetails.amount)}\nValid until: ${giftCardDetails.expiresAt}` : "";
