@@ -127,7 +127,11 @@ export default async function handler(request) {
       if (!orderResponse.ok) throw new Error(await orderResponse.text());
       const [savedOrder] = await orderResponse.json();
       const podItems = items.filter(item => item.fulfillment_mode === "prodigi");
-      if (podItems.length && !savedOrder?.prodigi_order_id) {
+      // A Stripe test payment must never create a physical Prodigi order, even when
+      // the production environment is configured with live Prodigi credentials.
+      if (podItems.length && !session.livemode) {
+        console.info(`Skipping Prodigi fulfilment for Stripe test session ${session.id}`);
+      } else if (podItems.length && !savedOrder?.prodigi_order_id) {
         if (!process.env.PRODIGI_WEBHOOK_SECRET) throw new Error("PRODIGI_WEBHOOK_SECRET must be configured before processing POD orders");
         const productIds = podItems.map(item => item.id).join(",");
         const productResponse = await fetch(`${supabaseUrl}/rest/v1/portfolio_items?select=id,fulfillment_mode,prodigi_sku,prodigi_asset_url,prodigi_assets,prodigi_attributes,prodigi_sizing,variants&id=in.(${encodeURIComponent(productIds)})`, {
