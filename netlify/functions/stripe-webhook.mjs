@@ -4,6 +4,7 @@ import { shipmentTracking, submitProdigiOrder } from "./_prodigi.mjs";
 const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character]);
 const euro = cents => new Intl.NumberFormat("en-BE", { style: "currency", currency: "EUR" }).format((cents || 0) / 100);
 const addressLines = address => address ? [address.line1, address.line2, [address.postal_code, address.city].filter(Boolean).join(" "), address.state, address.country].filter(Boolean) : [];
+const ORDER_NOTIFICATION_EMAIL = "herbz108.orders@gmail.com";
 
 async function sendOrderConfirmation({ session, items, customerName, shippingAddress, giftCardDetails }) {
   if (!process.env.BREVO_API_KEY || !process.env.BREVO_FROM_EMAIL || !session.customer_details?.email) {
@@ -32,6 +33,35 @@ async function sendOrderConfirmation({ session, items, customerName, shippingAdd
   });
   const result = await response.json();
   if (!response.ok) throw new Error(result?.message || "Order confirmation email failed");
+  return result.id;
+}
+
+async function sendMerchantOrderNotification({ session, items, customerName, shippingAddress, giftCardDetails }) {
+  if (!process.env.BREVO_API_KEY || !process.env.BREVO_FROM_EMAIL) {
+    console.warn("Order notification email skipped: Brevo is not configured");
+    return null;
+  }
+  const orderNumber = session.id.slice(-10).toUpperCase();
+  const itemText = items.map(item => `${item.quantity} × ${item.title} — ${euro(item.amount_total ?? item.unit_amount * item.quantity)}`).join("\n");
+  const itemHtml = items.map(item => `<tr><td style="padding:10px 0;border-bottom:1px solid #d8d3c8">${item.quantity} × ${escapeHtml(item.title)}</td><td style="padding:10px 0;border-bottom:1px solid #d8d3c8;text-align:right;white-space:nowrap">${escapeHtml(euro(item.amount_total ?? item.unit_amount * item.quantity))}</td></tr>`).join("");
+  const addressText = addressLines(shippingAddress).join("\n") || "No shipping address was supplied.";
+  const addressHtml = addressLines(shippingAddress).map(escapeHtml).join("<br>") || "No shipping address was supplied.";
+  const giftCardText = giftCardDetails ? `\n\nGIFT CARD GENERATED\nCode: ${giftCardDetails.code}\nValue: ${euro(giftCardDetails.amount)}\nValid until: ${giftCardDetails.expiresAt}` : "";
+  const giftCardHtml = giftCardDetails ? `<p><strong>Gift card generated</strong><br>Code: ${escapeHtml(giftCardDetails.code)}<br>Value: ${escapeHtml(euro(giftCardDetails.amount))}<br>Valid until: ${escapeHtml(giftCardDetails.expiresAt)}</p>` : "";
+  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: { "api-key": process.env.BREVO_API_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      sender: { name: "HERBZ108 orders", email: process.env.BREVO_FROM_EMAIL },
+      to: [{ email: ORDER_NOTIFICATION_EMAIL }],
+      replyTo: { email: "herbzbooking@protonmail.com" },
+      subject: `New paid HERBZ108 order — #${orderNumber}`,
+      textContent: `NEW PAID ORDER\n\nOrder #${orderNumber}\n\nCustomer: ${customerName || "Not supplied"}\nEmail: ${session.customer_details?.email || "Not supplied"}\n\nItems:\n${itemText}\n\nTotal paid: ${euro(session.amount_total)}\n\nShipping address:\n${addressText}${giftCardText}`,
+      htmlContent: `<div style="background:#080909;color:#e8e5de;padding:40px 20px;font-family:Arial,sans-serif"><div style="max-width:620px;margin:auto"><p style="color:#b28d2e;font:12px monospace;letter-spacing:.14em;text-transform:uppercase">HERBZ108 · New paid order</p><h1 style="font:32px Georgia,serif;margin:18px 0">Order #${escapeHtml(orderNumber)}</h1><p><strong>Customer:</strong> ${escapeHtml(customerName || "Not supplied")}<br><strong>Email:</strong> ${escapeHtml(session.customer_details?.email || "Not supplied")}</p><table style="width:100%;margin:28px 0;border-collapse:collapse;color:#e8e5de;font:14px monospace">${itemHtml}<tr><td style="padding:16px 0;font-weight:bold">Total paid</td><td style="padding:16px 0;text-align:right;font-weight:bold">${escapeHtml(euro(session.amount_total))}</td></tr></table><p><strong>Shipping address</strong><br>${addressHtml}</p>${giftCardHtml}</div></div>`
+    })
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result?.message || "Order notification email failed");
   return result.id;
 }
 
@@ -91,7 +121,7 @@ export default async function handler(request) {
         body: JSON.stringify({ p_event_id: event.id, p_session_id: session.id, p_items: items, p_customer_email: session.customer_details?.email || null, p_customer_name: customerName, p_shipping_address: shippingAddress, p_amount_total: session.amount_total, p_currency: session.currency })
       });
       if (!response.ok) throw new Error(await response.text());
-      const orderResponse = await fetch(`${supabaseUrl}/rest/v1/orders?select=id,stripe_session_id,customer_email,customer_name,shipping_address,currency,prodigi_order_id,confirmation_email_sent_at&stripe_event_id=eq.${encodeURIComponent(event.id)}&limit=1`, {
+      const orderResponse = await fetch(`${supabaseUrl}/rest/v1/orders?select=id,stripe_session_id,customer_email,customer_name,shipping_address,currency,prodigi_order_id,confirmation_email_sent_at,merchant_notification_sent_at&stripe_event_id=eq.${encodeURIComponent(event.id)}&limit=1`, {
         headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` }
       });
       if (!orderResponse.ok) throw new Error(await orderResponse.text());
@@ -128,6 +158,17 @@ export default async function handler(request) {
             body: JSON.stringify({ confirmation_email_sent_at: new Date().toISOString(), confirmation_email_id: emailId })
           });
           if (!emailUpdate.ok) throw new Error(await emailUpdate.text());
+        }
+      }
+      if (!savedOrder?.merchant_notification_sent_at) {
+        const notificationId = await sendMerchantOrderNotification({ session, items, customerName, shippingAddress, giftCardDetails });
+        if (notificationId) {
+          const notificationUpdate = await fetch(`${supabaseUrl}/rest/v1/orders?stripe_event_id=eq.${encodeURIComponent(event.id)}`, {
+            method: "PATCH",
+            headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+            body: JSON.stringify({ merchant_notification_sent_at: new Date().toISOString(), merchant_notification_email_id: notificationId })
+          });
+          if (!notificationUpdate.ok) throw new Error(await notificationUpdate.text());
         }
       }
     }
