@@ -4,7 +4,7 @@ import { databaseConfigured, deletePortfolioImage, deletePortfolioItem, fetchGif
 import "./styles.css";
 
 const IG = "https://instagram.com/herbz108";
-const nav = [["Tattoo", "/#tattoo"], ["About", "/#about"], ["Shop", "/shop"], ["Recent work", "/#recent"]];
+const nav = [["Shop", "/shop"]];
 const APPAREL_SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
 const BELLA_CANVAS_COLOURS = [["black", "Black"], ["white", "White"], ["silver", "Silver"], ["heather_grey", "Heather grey"], ["dark_grey_heather", "Dark grey heather"]];
 const SHOP_PRODUCT_TYPES = [
@@ -315,11 +315,10 @@ function App() {
   const byCategory = category => portfolio.filter(x => x.category === category).sort((a, b) => (a.sort_order ?? 999999) - (b.sort_order ?? 999999) || new Date(b.created_at || 0) - new Date(a.created_at || 0)); let page;
   if (loadingPortfolio && path !== "/admin") page = <main className="not-found wrap"><p className="kicker">Loading studio archive…</p></main>;
   else if (path.startsWith("/product/")) { const item = portfolio.find(product => product.id === decodeURIComponent(path.slice(9))); page = item ? (Array.isArray(item.variants) && item.variants.length ? <VariantProductPage item={item} onAdd={addToCart} /> : <ProductPage item={item} onAdd={addToCart} />) : <NotFound />; }
-  else if (path === "/") page = <Home items={portfolio} />;
+  else if (path === "/") page = <ShopHome items={byCategory("shop")} onAdd={addToCart} />;
   else if (path === "/shop") page = <ShopHome items={byCategory("shop")} onAdd={addToCart} />;
-  else if (path === "/tattoo") page = <GalleryPage index="01" title="Tattoo work." intro="A selection of work from the studio." items={byCategory("tattoo")} />;
-  else if (path === "/art") page = <GalleryPage index="02" title="Visual work." intro="Paper, canvas and objects from the studio." items={byCategory("art")} />;
-  else if (path === "/contact") page = <Contact />;
+  else if (path === "/website-preview") page = <Home items={portfolio} />;
+  else if (["/tattoo", "/art", "/contact"].includes(path)) page = <NotFound />;
   else if (path === "/admin") page = <Admin items={portfolio} onChanged={refresh} />; else if (path === "/checkout/success") page = <CheckoutSuccess onClear={() => setCart([])} />; else page = <NotFound />;
   return <><Header cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)} onCartOpen={() => setCartOpen(true)} />{page}<Footer /><CartDrawer open={cartOpen} items={cart} onClose={() => setCartOpen(false)} onChange={(key, quantity) => setCart(current => quantity < 1 ? current.filter(x => (x.cartKey || x.id) !== key) : current.map(x => (x.cartKey || x.id) === key ? { ...x, quantity: Math.min(quantity, x.stock ?? 1) } : x))} onRemove={key => setCart(current => current.filter(x => (x.cartKey || x.id) !== key))} /></>;
 }

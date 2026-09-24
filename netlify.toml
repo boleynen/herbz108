@@ -1,9 +1,19 @@
 [build]
   command = "npm run build"
   publish = "dist"
-  functions = "netlify/functions"
+functions = "netlify/functions"
+
+[[redirects]]
+  from = "/"
+  to = "/shop"
+  status = 302
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+[[headers]]
+  for = "/website-preview"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
