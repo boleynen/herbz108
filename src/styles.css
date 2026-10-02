@@ -84,6 +84,14 @@
 .variant-editor>label{display:flex;align-items:center;gap:10px;margin:0;color:var(--paper);font:12px monospace;white-space:nowrap}
 .variant-editor>label input[type="checkbox"]{width:18px;height:18px;margin:0;accent-color:var(--cyan)}
 .variant-editor small{grid-column:1/-1}
+.admin-form .variant-editor{display:none}
+.print-offering-editor{grid-column:1/-1;display:grid;gap:16px;margin:0;padding:24px;border:1px solid var(--cyan)}
+.print-offering-editor legend{padding:0 9px;color:var(--paper);font:700 12px monospace;text-transform:uppercase;letter-spacing:.13em}
+.print-option-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.print-option-grid section{display:grid;gap:10px;padding:16px;border:1px solid var(--line)}
+.print-option-grid section>p{margin:0 0 2px;color:var(--cyan);font:700 11px monospace;text-transform:uppercase;letter-spacing:.12em}
+.print-option-grid label{display:flex!important;flex-direction:row!important;align-items:center;gap:10px;color:var(--paper)!important;font:12px monospace!important}
+.print-option-grid input{width:18px!important;height:18px!important;margin:0!important;accent-color:var(--cyan)}
 .variant-price-title{grid-column:1/-1;margin:12px 0 0;color:var(--cyan);font:10px monospace;text-transform:uppercase;letter-spacing:.12em}
 .variant-price-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;grid-column:1/-1}
 .variant-price-grid label{display:grid;gap:6px}
